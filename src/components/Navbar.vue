@@ -4,13 +4,55 @@
       <router-link to="/" class="logo">🎭 Cinephile Society</router-link>
 
       <div class="search-bar">
-        <input
-          type="text"
-          v-model="searchQuery"
-          placeholder="Search movies, shows, actors..."
-          @keyup.enter="performSearch"
-          class="search-input"
-        >
+        <div class="search-wrapper">
+          <input
+            type="text"
+            v-model="searchQuery"
+            placeholder="Search movies, shows, actors..."
+            @keyup.enter="performSearch"
+            @input="onSearchInput"
+            @focus="showSuggestions = true"
+            @blur="hideSuggestions"
+            class="search-input"
+          >
+
+          <!-- Clear button -->
+          <button
+            v-if="searchQuery"
+            type="button"
+            @click="clearSearch"
+            class="clear-button"
+          >
+            ×
+          </button>
+
+          <!-- Search Suggestions Dropdown -->
+          <div
+            v-if="showSuggestions && suggestions.length > 0"
+            class="suggestions-dropdown"
+          >
+            <button
+              v-for="suggestion in suggestions"
+              :key="suggestion.id"
+              type="button"
+              @mousedown="selectSuggestion(suggestion)"
+              class="suggestion-item"
+            >
+              <img
+                v-if="suggestion.poster_path"
+                :src="`https://image.tmdb.org/t/p/w92${suggestion.poster_path}`"
+                :alt="suggestion.title"
+                class="suggestion-poster"
+              />
+              <div class="suggestion-info">
+                <p class="suggestion-title">{{ suggestion.title }}</p>
+                <p class="suggestion-year">
+                  {{ suggestion.release_date ? new Date(suggestion.release_date).getFullYear() : 'Unknown' }}
+                </p>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
 
       <ul class="nav-links" :class="{ active: mobileMenuOpen }">
@@ -39,25 +81,89 @@
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { tmdbService } from '@/services/tmdb'
 
 export default {
   name: 'Navbar',
   setup() {
     const searchQuery = ref('')
     const mobileMenuOpen = ref(false)
+    const showSuggestions = ref(false)
+    const suggestions = ref([])
+    const searchTimeout = ref(null)
     const router = useRouter()
+
+    // TMDB API configuration
+    const apiKey = process.env.VUE_APP_TMDB_API_KEY || ''
+    const baseUrl = 'https://api.themoviedb.org/3'
 
     const performSearch = () => {
       if (searchQuery.value.trim()) {
         console.log('Searching for:', searchQuery.value)
         // Navigate to search results page
         router.push({
-          name: 'Search',
-          query: { q: searchQuery.value }
+          name: 'SearchResults', // Changed from 'Search' to match the router config
+          query: { q: searchQuery.value.trim() }
         })
         searchQuery.value = ''
+        showSuggestions.value = false
         closeMobileMenu()
       }
+    }
+
+    const fetchSuggestions = async () => {
+      try {
+        const results = await tmdbService.getSearchSuggestions(searchQuery.value)
+        suggestions.value = results
+        // Keep suggestions visible even if no results (could show "No results found")
+        showSuggestions.value = true
+      } catch (error) {
+        console.error('Error fetching suggestions:', error)
+        suggestions.value = []
+        showSuggestions.value = false
+      }
+    }
+
+    const onSearchInput = () => {
+      // Clear existing timeout
+      if (searchTimeout.value) {
+        clearTimeout(searchTimeout.value)
+      }
+
+      // Debounce search suggestions
+      if (searchQuery.value.trim().length >= 2) {
+        searchTimeout.value = setTimeout(() => {
+          fetchSuggestions()
+        }, 800)
+      } else {
+        suggestions.value = []
+        showSuggestions.value = false
+      }
+    }
+
+    const selectSuggestion = (movie) => {
+      // Clear the search and hide suggestions
+      searchQuery.value = ''
+      showSuggestions.value = false
+
+      // Navigate directly to the movie detail page
+      router.push({
+        name: 'MovieDetail',
+        params: { id: movie.id }
+      })
+    }
+
+    const clearSearch = () => {
+      searchQuery.value = ''
+      suggestions.value = []
+      showSuggestions.value = false
+    }
+
+    const hideSuggestions = () => {
+      // Small delay to allow for suggestion clicks
+      setTimeout(() => {
+        showSuggestions.value = false
+      }, 150)
     }
 
     const toggleMobileMenu = () => {
@@ -72,6 +178,10 @@ export default {
       if (!event.target.closest('.nav-container') && mobileMenuOpen.value) {
         mobileMenuOpen.value = false
       }
+      // Close suggestions when clicking outside
+      if (!event.target.closest('.search-wrapper')) {
+        showSuggestions.value = false
+      }
     }
 
     onMounted(() => {
@@ -80,12 +190,21 @@ export default {
 
     onUnmounted(() => {
       document.removeEventListener('click', handleClickOutside)
+      if (searchTimeout.value) {
+        clearTimeout(searchTimeout.value)
+      }
     })
 
     return {
       searchQuery,
       mobileMenuOpen,
+      showSuggestions,
+      suggestions,
       performSearch,
+      onSearchInput,
+      selectSuggestion,
+      clearSearch,
+      hideSuggestions,
       toggleMobileMenu,
       closeMobileMenu,
       isLoggedIn: ref(true) // Placeholder for authentication state
@@ -102,7 +221,6 @@ export default {
   top: 0;
   z-index: 1000;
 }
-
 
 .nav-container {
   max-width: 1400px;
@@ -167,18 +285,18 @@ export default {
   font-weight: 600;
 }
 
-/* .nav-links a.router-link-active::before {
-  left: 0;
-  background: rgba(102, 126, 234, 0.1);
-} */
-
 .search-bar {
   position: relative;
   margin: 0 2rem;
 }
 
+.search-wrapper {
+  position: relative;
+}
+
 .search-input {
   padding: 0.7rem 1.5rem;
+  padding-right: 2.5rem; /* Make room for clear button */
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 25px;
   background: #c0c0c0;
@@ -197,6 +315,94 @@ export default {
 
 .search-input::placeholder {
   color: #666;
+}
+
+.clear-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.clear-button:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Search Suggestions Dropdown */
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--gothic-black);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  margin-top: 5px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1001;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.suggestion-item {
+  width: 100%;
+  padding: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-gothic-primary);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: background-color 0.2s ease;
+}
+
+.suggestion-item:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--text-gothic-accent);
+}
+
+.suggestion-poster {
+  width: 30px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.suggestion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestion-title {
+  font-weight: 500;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-year {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
 }
 
 .hamburger {
@@ -266,6 +472,11 @@ export default {
     padding: 0 1rem;
   }
 
+  .suggestions-dropdown {
+    left: -1rem;
+    right: -1rem;
+  }
+
   /* Hamburger animation when active */
   .hamburger.active span:nth-child(1) {
     transform: rotate(45deg) translate(5px, 5px);
@@ -296,6 +507,21 @@ export default {
 
   .navbar {
     padding: 0.8rem 1rem;
+  }
+
+  .suggestions-dropdown {
+    left: -0.5rem;
+    right: -0.5rem;
+  }
+
+  .suggestion-item {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .suggestion-poster {
+    width: 25px;
+    height: 37px;
   }
 }
 </style>

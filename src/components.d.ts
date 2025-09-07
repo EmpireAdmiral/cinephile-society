@@ -15,9 +15,11 @@ declare module 'vue' {
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     HeroSection: typeof import('./components/HeroSection.vue')['default']
     MainLayout: typeof import('./components/MainLayout.vue')['default']
+    MovieDetail: typeof import('./components/MovieDetail.vue')['default']
     Movies: typeof import('./components/Movies.vue')['default']
     Navbar: typeof import('./components/Navbar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SearchResults: typeof import('./components/SearchResults.vue')['default']
   }
 }
