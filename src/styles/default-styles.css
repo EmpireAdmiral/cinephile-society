@@ -1,0 +1,144 @@
+/* Gothic Color Palette */
+:root {
+  /* Core Gothic Colors */
+  --gothic-black: #0a0a0a;           /* Deep black */
+  --gothic-charcoal: #1a1a1a;        /* Charcoal */
+  --gothic-dark-gray: #2d2d2d;       /* Dark gray */
+  --gothic-stone: #3a3a3a;           /* Stone gray */
+  --gothic-smoke: #4a4a4a;           /* Smoke gray */
+  
+  /* Gothic Purples - For mystery and elegance */
+  --gothic-deep-purple: #2d1b3d;     /* Deep purple */
+  --gothic-royal-purple: #4a2c5a;    /* Royal purple */
+  --gothic-amethyst: #6a4c7c;        /* Amethyst */
+  --gothic-lavender: #8b7d9e;        /* Muted lavender */
+  
+  /* Gothic Reds - For drama and passion */
+  --gothic-blood-red: #8b0000;       /* Deep blood red */
+  --gothic-burgundy: #722f37;        /* Burgundy */
+  --gothic-wine: #5d1a1d;            /* Wine red */
+  --gothic-crimson: #a0353a;         /* Crimson */
+  
+  /* Gothic Accent Colors */
+  --gothic-gold: #d4af37;            /* Antique gold */
+  --gothic-copper: #b87333;          /* Copper */
+  --gothic-silver: #c0c0c0;          /* Silver */
+  --gothic-bone: #f5f5dc;            /* Bone white */
+  
+  /* Text Colors */
+  --text-gothic-primary: #f5f5dc;    /* Bone white for primary text */
+  --text-gothic-secondary: #c0c0c0;  /* Silver for secondary text */
+  --text-gothic-muted: #8b7d9e;      /* Muted lavender for subtle text */
+  --text-gothic-accent: #d4af37;     /* Gold for highlights */
+  --text-gothic-link: #6a4c7c;       /* Amethyst for links */
+  
+  /* Background Gradients */
+  --bg-gothic-main: linear-gradient(135deg, var(--gothic-black) 0%, var(--gothic-deep-purple) 100%);
+  --bg-gothic-card: linear-gradient(145deg, var(--gothic-charcoal) 0%, var(--gothic-dark-gray) 100%);
+  --bg-gothic-header: linear-gradient(90deg, var(--gothic-wine) 0%, var(--gothic-deep-purple) 100%);
+  
+  /* Glass Effects with Gothic Colors */
+  --bg-gothic-glass: #1a1a1a66;      /* Charcoal with 40% opacity */
+  --bg-gothic-glass-light: #2d2d2d4d; /* Dark gray with 30% opacity */
+  --bg-gothic-glass-strong: #0a0a0a80; /* Deep black with 50% opacity */
+  
+  /* Border Colors */
+  --border-gothic: #d4af3733;        /* Gold with 20% opacity */
+  --border-gothic-subtle: #c0c0c033; /* Silver with 20% opacity */
+  --border-gothic-strong: #d4af3766; /* Gold with 40% opacity */
+  
+  /* Shadow Colors */
+  --shadow-gothic-light: #0000004d;   /* 30% black */
+  --shadow-gothic-medium: #00000080;  /* 50% black */
+  --shadow-gothic-strong: #000000b3;  /* 70% black */
+  --shadow-gothic-colored: #2d1b3d66; /* Purple shadow */
+  
+  /* Button Colors */
+  --btn-gothic-primary-bg: var(--gothic-burgundy);
+  --btn-gothic-primary-hover: var(--gothic-blood-red);
+  --btn-gothic-secondary-bg: transparent;
+  --btn-gothic-secondary-hover: var(--gothic-glass);
+  --btn-gothic-accent-bg: var(--gothic-gold);
+  --btn-gothic-accent-hover: var(--gothic-copper);
+  
+  /* Status Colors - Gothic themed */
+  --gothic-success: #2d5a3d;         /* Dark forest green */
+  --gothic-warning: #5a4a2d;         /* Dark amber */
+  --gothic-error: var(--gothic-blood-red);
+  --gothic-info: var(--gothic-amethyst);
+  
+  /* Special Effects */
+  --glow-gothic-gold: 0 0 20px #d4af3740;
+  --glow-gothic-purple: 0 0 20px #6a4c7c40;
+  --glow-gothic-red: 0 0 20px #8b000040;
+  
+  /* Typography */
+  --font-gothic-display: 'Cinzel', 'Times New Roman', serif;    /* For headings */
+  --font-gothic-body: 'Crimson Text', 'Georgia', serif;        /* For body text */
+  --font-gothic-accent: 'UnifrakturMaguntia', cursive;         /* For special text */
+}
+
+/* Gothic Theme Classes */
+.gothic-theme {
+  background: var(--bg-gothic-main);
+  color: var(--text-gothic-primary);
+  font-family: var(--font-gothic-body);
+}
+
+.gothic-card {
+  background: var(--bg-gothic-glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-gothic);
+  box-shadow: 0 8px 32px var(--shadow-gothic-medium);
+}
+
+.gothic-card:hover {
+  border-color: var(--border-gothic-strong);
+  box-shadow: var(--glow-gothic-gold);
+}
+
+.gothic-text-glow {
+  text-shadow: var(--glow-gothic-gold);
+}
+
+.gothic-heading {
+  font-family: var(--font-gothic-display);
+  color: var(--text-gothic-accent);
+  text-shadow: 2px 2px 4px var(--shadow-gothic-strong);
+}
+
+/* Example Usage Patterns */
+.gothic-navbar {
+  background: var(--bg-gothic-glass-strong);
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid var(--border-gothic-subtle);
+}
+
+.gothic-hero {
+  background: var(--bg-gothic-header);
+  color: var(--text-gothic-primary);
+}
+
+.gothic-button-primary {
+  background: var(--btn-gothic-primary-bg);
+  color: var(--text-gothic-primary);
+  border: 1px solid var(--border-gothic);
+  transition: all 0.3s ease;
+}
+
+.gothic-button-primary:hover {
+  background: var(--btn-gothic-primary-hover);
+  box-shadow: var(--glow-gothic-red);
+  transform: translateY(-2px);
+}
+
+.gothic-button-accent {
+  background: var(--btn-gothic-accent-bg);
+  color: var(--gothic-black);
+  border: none;
+}
+
+.gothic-button-accent:hover {
+  background: var(--btn-gothic-accent-hover);
+  box-shadow: var(--glow-gothic-gold);
+} 
