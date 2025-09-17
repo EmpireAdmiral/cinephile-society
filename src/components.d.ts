@@ -15,6 +15,7 @@ declare module 'vue' {
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     HeroSection: typeof import('./components/HeroSection.vue')['default']
     MainLayout: typeof import('./components/MainLayout.vue')['default']
+    MovieCard: typeof import('./components/MovieCard.vue')['default']
     MovieDetail: typeof import('./components/MovieDetail.vue')['default']
     Movies: typeof import('./components/Movies.vue')['default']
     Navbar: typeof import('./components/Navbar.vue')['default']

@@ -1,139 +1,68 @@
 <template>
-  <div class="min-h-screen bg-gray-900 text-gray-100">
+  <div class="search-results-page">
     <!-- Search Header -->
-    <div class="bg-gray-800 border-b border-gray-700 py-6">
-      <div class="container mx-auto px-4">
-        <h1 class="text-2xl font-bold text-purple-400 mb-2">Search Results</h1>
-        <p class="text-gray-300" v-if="searchQuery">
-          Results for "<span class="text-purple-300">{{ searchQuery }}</span>"
+    <div class="search-header">
+      <div class="container">
+        <h1 class="search-title">Search Results</h1>
+        <p v-if="searchQuery" class="search-subtitle">
+          Found {{ totalResults || 0 }} results for
+          <span class="search-term">"{{ searchQuery }}"</span>
         </p>
       </div>
     </div>
 
-    <div class="container mx-auto px-4 py-8">
+    <div class="container">
       <!-- Loading State -->
-      <div v-if="loading" class="flex justify-center items-center py-12">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-        <span class="ml-3 text-gray-300">Searching movies...</span>
+      <div v-if="loading && currentPage === 1" class="loading-container">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">Searching movies...</span>
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="text-center py-12">
-        <div class="bg-red-900/20 border border-red-800 rounded-lg p-6 max-w-md mx-auto">
-          <h3 class="text-red-400 font-semibold mb-2">Search Error</h3>
-          <p class="text-gray-300">{{ error }}</p>
+      <div v-else-if="error" class="error-container">
+        <div class="error-card">
+          <h3 class="error-title">Search Error</h3>
+          <p class="error-message">{{ error }}</p>
+          <button @click="resetAndSearch" class="retry-button">
+            Try Again
+          </button>
         </div>
       </div>
 
       <!-- No Results -->
-      <div v-else-if="movies.length === 0 && searchQuery" class="text-center py-12">
-        <div class="bg-gray-800 border border-gray-700 rounded-lg p-8 max-w-md mx-auto">
-          <h3 class="text-gray-400 font-semibold mb-2">No Results Found</h3>
-          <p class="text-gray-500">Try searching with different keywords</p>
+      <div v-else-if="movies.length === 0 && searchQuery" class="no-results">
+        <div class="no-results-card">
+          <svg class="no-results-icon" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+          <h3 class="no-results-title">No movies found</h3>
+          <p class="no-results-text">Try different keywords or check your spelling</p>
         </div>
       </div>
 
-      <!-- Search Results Grid -->
-      <div v-else-if="movies.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
-          v-for="movie in movies"
-          :key="movie.id"
-          class="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden hover:border-purple-500 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10"
-        >
-          <!-- Movie Poster -->
-          <div class="relative aspect-[2/3] bg-gray-700">
-            <img
-              v-if="movie.poster_path"
-              :src="`https://image.tmdb.org/t/p/w500${movie.poster_path}`"
-              :alt="movie.title"
-              class="w-full h-full object-cover"
-              @error="handleImageError"
-            />
-            <div v-else class="w-full h-full flex items-center justify-center text-gray-500">
-              <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-              </svg>
-            </div>
-
-            <!-- Rating Badge -->
-            <div v-if="movie.vote_average > 0" class="absolute top-3 right-3">
-              <div class="bg-black/80 backdrop-blur-sm rounded-full px-2 py-1 flex items-center">
-                <svg class="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <span class="text-white text-sm font-medium">{{ movie.vote_average.toFixed(1) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Movie Info -->
-          <div class="p-4">
-            <!-- Title and Year -->
-            <h3 class="font-bold text-lg text-white mb-2 line-clamp-2">
-              {{ movie.title }}
-              <span v-if="movie.release_date" class="text-gray-400 font-normal">
-                ({{ new Date(movie.release_date).getFullYear() }})
-              </span>
-            </h3>
-
-            <!-- Overview -->
-            <p v-if="movie.overview" class="text-gray-300 text-sm line-clamp-3 mb-3">
-              {{ movie.overview }}
-            </p>
-
-            <!-- Genres -->
-            <div v-if="movie.genre_ids && movie.genre_ids.length > 0" class="mb-3">
-              <div class="flex flex-wrap gap-1">
-                <span
-                  v-for="genreId in movie.genre_ids.slice(0, 3)"
-                  :key="genreId"
-                  class="bg-purple-900/30 text-purple-300 px-2 py-1 rounded text-xs"
-                >
-                  {{ getGenreName(genreId) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Crew Info (will be populated when we fetch detailed data) -->
-            <div v-if="movie.crew && movie.crew.length > 0" class="text-sm text-gray-400 mb-3">
-              <div v-if="movie.crew.find(c => c.job === 'Director')">
-                <span class="text-gray-300">Director:</span>
-                {{ movie.crew.find(c => c.job === 'Director').name }}
-              </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="flex gap-2 pt-2">
-              <button
-                @click="viewMovieDetails(movie)"
-                class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded font-medium transition-colors"
-              >
-                View Details
-              </button>
-              <button
-                @click="addToWatchlist(movie)"
-                class="bg-gray-700 hover:bg-gray-600 text-gray-200 py-2 px-3 rounded transition-colors"
-                title="Add to Watchlist"
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </button>
-            </div>
-          </div>
+      <!-- Search Results -->
+      <div v-else-if="movies.length > 0" class="results-section">
+        <div class="movies-grid">
+          <MovieCard
+            v-for="movie in movies"
+            :key="movie.id"
+            :movie="movie"
+            :show-placeholder="true"
+            @click="handleMovieClick"
+          />
         </div>
-      </div>
 
-      <!-- Load More Button -->
-      <div v-if="movies.length > 0 && hasMoreResults" class="text-center mt-8">
-        <button
-          @click="loadMoreResults"
-          :disabled="loadingMore"
-          class="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 text-white py-3 px-6 rounded-lg font-medium transition-colors"
-        >
-          <span v-if="loadingMore">Loading...</span>
-          <span v-else>Load More Results</span>
-        </button>
+        <!-- Load More Button -->
+        <div v-if="hasMoreResults" class="load-more-container">
+          <button
+            @click="loadMoreResults"
+            :disabled="loadingMore"
+            class="load-more-btn"
+          >
+            <span v-if="loadingMore" class="loading-spinner-small"></span>
+            <span>{{ loadingMore ? 'Loading...' : 'Load More Results' }}</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -141,30 +70,13 @@
 
 <script>
 import { tmdbService } from '@/services/tmdb'
-const genreMap = {
-  28: 'Action',
-  12: 'Adventure',
-  16: 'Animation',
-  35: 'Comedy',
-  80: 'Crime',
-  99: 'Documentary',
-  18: 'Drama',
-  10751: 'Family',
-  14: 'Fantasy',
-  36: 'History',
-  27: 'Horror',
-  10402: 'Music',
-  9648: 'Mystery',
-  10749: 'Romance',
-  878: 'Science Fiction',
-  10770: 'TV Movie',
-  53: 'Thriller',
-  10752: 'War',
-  37: 'Western'
-}
+import MovieCard from '@/components/MovieCard.vue'
 
 export default {
   name: 'SearchResults',
+  components: {
+    MovieCard
+  },
   data() {
     return {
       movies: [],
@@ -174,20 +86,20 @@ export default {
       searchQuery: '',
       currentPage: 1,
       totalPages: 0,
-      hasMoreResults: false
+      totalResults: 0,
+      hasMoreResults: false,
+      loadedCastFor: new Set()
     }
   },
   mounted() {
-    // Get search query from route params or query string
-    this.searchQuery = this.$route.query.q || this.$route.params.query || '';
+    this.searchQuery = this.$route.query.q || '';
     if (this.searchQuery) {
       this.searchMovies();
     }
   },
   watch: {
     '$route'(to) {
-      // Watch for route changes to handle new searches
-      const newQuery = to.query.q || to.params.query || '';
+      const newQuery = to.query.q || '';
       if (newQuery !== this.searchQuery) {
         this.searchQuery = newQuery;
         this.resetSearch();
@@ -199,20 +111,25 @@ export default {
   },
   methods: {
     async searchMovies() {
-      this.loading = true;
+      this.loading = this.currentPage === 1;
       this.error = null;
 
       try {
         const data = await tmdbService.searchMovies(this.searchQuery, this.currentPage);
+        const newMovies = data.results || [];
 
         if (this.currentPage === 1) {
-          this.movies = data.results || [];
+          this.movies = newMovies;
         } else {
-          this.movies = [...this.movies, ...(data.results || [])];
+          this.movies = [...this.movies, ...newMovies];
         }
 
         this.totalPages = data.total_pages || 0;
+        this.totalResults = data.total_results || 0;
         this.hasMoreResults = this.currentPage < this.totalPages;
+
+        // Load cast for first batch of movies
+        this.loadCastForVisibleMovies();
 
       } catch (err) {
         this.error = err.message || 'An error occurred while searching';
@@ -220,6 +137,29 @@ export default {
       } finally {
         this.loading = false;
         this.loadingMore = false;
+      }
+    },
+
+    async loadCastForVisibleMovies() {
+      // Load cast for first 12 movies to improve performance
+      const moviesToLoadCast = this.movies.slice(0, 12).filter(movie =>
+        !this.loadedCastFor.has(movie.id)
+      );
+
+      for (const movie of moviesToLoadCast) {
+        try {
+          const movieDetails = await tmdbService.getCompleteMovieDetails(movie.id);
+          const movieIndex = this.movies.findIndex(m => m.id === movie.id);
+          if (movieIndex !== -1) {
+            this.movies[movieIndex] = {
+              ...this.movies[movieIndex],
+              cast: movieDetails.credits.cast
+            };
+          }
+          this.loadedCastFor.add(movie.id);
+        } catch (error) {
+          console.error(`Error loading cast for movie ${movie.id}:`, error);
+        }
       }
     },
 
@@ -235,41 +175,236 @@ export default {
       this.movies = [];
       this.currentPage = 1;
       this.totalPages = 0;
+      this.totalResults = 0;
       this.hasMoreResults = false;
       this.error = null;
+      this.loadedCastFor.clear();
     },
 
-    viewMovieDetails(movie) {
-      // Navigate to movie detail page
-      this.$router.push(`/movie/${movie.id}`);
+    resetAndSearch() {
+      this.resetSearch();
+      if (this.searchQuery) {
+        this.searchMovies();
+      }
     },
 
-    addToWatchlist(movie) {
-      // Add to watchlist functionality
-      console.log('Adding to watchlist:', movie.title);
-    },
-
-    getGenreName(genreId) {
-      return genreMap[genreId] || 'Unknown';
+    handleMovieClick(movie) {
+      console.log('Movie clicked:', movie); // Add this line
+      this.$router.push({
+        name: 'MovieDetail',
+        params: { id: movie.id }
+      });
     }
-
-    // ... rest of your existing methods
   }
 }
 </script>
 
 <style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.search-results-page {
+  min-height: 100vh;
+  background: var(--gothic-black);
+  color: var(--text-gothic-primary);
 }
 
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.search-header {
+  background: var(--gothic-charcoal);
+  border-bottom: 2px solid var(--text-gothic-secondary);
+  padding: 2rem 0;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.search-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.search-subtitle {
+  color: var(--text-gothic-secondary);
+  font-size: 1.1rem;
+}
+
+.search-term {
+  color: var(--text-gothic-accent);
+  font-weight: 600;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 0;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(102, 126, 234, 0.3);
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  color: var(--text-gothic-secondary);
+  font-size: 1.1rem;
+}
+
+.error-container, .no-results {
+  display: flex;
+  justify-content: center;
+  padding: 4rem 0;
+}
+
+.error-card, .no-results-card {
+  background: var(--gothic-charcoal);
+  border: 2px solid #dc2626;
+  border-radius: 15px;
+  padding: 2rem;
+  text-align: center;
+  max-width: 500px;
+}
+
+.no-results-card {
+  border-color: var(--text-gothic-secondary);
+}
+
+.error-title, .no-results-title {
+  color: var(--text-gothic-accent);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.error-message, .no-results-text {
+  color: var(--text-gothic-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.no-results-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--text-gothic-secondary);
+  margin-bottom: 1rem;
+}
+
+.retry-button {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.results-section {
+  padding: 2rem 0;
+}
+
+.movies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 2rem;
+  justify-items: center;
+}
+
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 3rem;
+}
+
+.load-more-btn {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.load-more-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.load-more-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loading-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .movies-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .search-title {
+    font-size: 2rem;
+  }
+
+  .movies-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-header {
+    padding: 1.5rem 0;
+  }
+
+  .search-title {
+    font-size: 1.8rem;
+  }
+
+  .movies-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
 }
 </style>
