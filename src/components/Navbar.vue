@@ -95,7 +95,6 @@ export default {
 
     // TMDB API configuration
     const apiKey = process.env.VUE_APP_TMDB_API_KEY || ''
-    const baseUrl = 'https://api.themoviedb.org/3'
 
     const performSearch = () => {
       if (searchQuery.value.trim()) {
@@ -113,9 +112,9 @@ export default {
 
     const fetchSuggestions = async () => {
       try {
-        const results = await tmdbService.getSearchSuggestions(searchQuery.value)
+        const results = await tmdbService.getMultiSearchSuggestions(searchQuery.value)
         suggestions.value = results
-        // Keep suggestions visible even if no results (could show "No results found")
+        // Keep suggestions visible when we have results
         showSuggestions.value = true
       } catch (error) {
         console.error('Error fetching suggestions:', error)
@@ -141,16 +140,27 @@ export default {
       }
     }
 
-    const selectSuggestion = (movie) => {
+    const selectSuggestion = (item) => {
       // Clear the search and hide suggestions
       searchQuery.value = ''
       showSuggestions.value = false
 
-      // Navigate directly to the movie detail page
-      router.push({
-        name: 'MovieDetail',
-        params: { id: movie.id }
-      })
+      if (item.media_type === 'movie') {
+        router.push({
+          name: 'Movies',
+          params: { id: item.id }
+        })
+      } else if (item.media_type === 'tv') {
+        router.push({
+          name: 'TVShow',
+          params: { id: item.id }
+        })
+      } else {
+        router.push({
+          name: 'SearchResults',
+          query: { q: item.title || item.name }
+        })
+      }
     }
 
     const clearSearch = () => {
@@ -163,7 +173,7 @@ export default {
       // Small delay to allow for suggestion clicks
       setTimeout(() => {
         showSuggestions.value = false
-      }, 150)
+      }, 250)
     }
 
     const toggleMobileMenu = () => {

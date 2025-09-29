@@ -1,4 +1,5 @@
 <template>
+  <Navbar />
   <div class="movie-detail-page">
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">
@@ -194,7 +195,7 @@
 
 <script>
 import { tmdbService } from '@/services/tmdb'
-
+import Navbar from './Navbar.vue'
 export default {
   name: 'MovieDetail',
   props: {

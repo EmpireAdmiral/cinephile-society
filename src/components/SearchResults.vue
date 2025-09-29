@@ -1,4 +1,5 @@
 <template>
+  <Navbar />
   <div class="search-results-page">
     <!-- Search Header -->
     <div class="search-header">
@@ -12,6 +13,34 @@
     </div>
 
     <div class="container">
+      <!-- Filter Tabs -->
+      <div class="filter-tabs">
+        <button
+          @click="activeFilter = 'all'"
+          :class="['filter-tab', { active: activeFilter === 'all' }]"
+        >
+          All ({{ totalResults || 0 }})
+        </button>
+        <button
+          @click="activeFilter = 'movie'"
+          :class="['filter-tab', { active: activeFilter === 'movie' }]"
+        >
+          Movies ({{ movieCount }})
+        </button>
+        <button
+          @click="activeFilter = 'tv'"
+          :class="['filter-tab', { active: activeFilter === 'tv' }]"
+        >
+          TV Shows ({{ tvCount }})
+        </button>
+        <button
+          @click="activeFilter = 'person'"
+          :class="['filter-tab', { active: activeFilter === 'person' }]"
+        >
+          People ({{ peopleCount }})
+        </button>
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading && currentPage === 1" class="loading-container">
         <div class="loading-spinner"></div>
@@ -42,13 +71,31 @@
 
       <!-- Search Results -->
       <div v-else-if="movies.length > 0" class="results-section">
-        <div class="movies-grid">
+        <div class="results-grid">
+          <!-- Movies -->
           <MovieCard
-            v-for="movie in movies"
-            :key="movie.id"
-            :movie="movie"
+            v-for="item in filteredResults.filter(item => item.media_type === 'movie')"
+            :key="`movie-${item.id}`"
+            :movie="item"
             :show-placeholder="true"
             @click="handleMovieClick"
+          />
+
+          <!-- TV Shows -->
+          <TVCard
+            v-for="item in filteredResults.filter(item => item.media_type === 'tv')"
+            :key="`tv-${item.id}`"
+            :show="item"
+            :show-placeholder="true"
+            @click="handleTVShowClick"
+          />
+
+          <!-- People -->
+          <PersonCard
+            v-for="item in filteredResults.filter(item => item.media_type === 'person')"
+            :key="`person-${item.id}`"
+            :person="item"
+            @click="handlePersonClick"
           />
         </div>
 
@@ -71,11 +118,13 @@
 <script>
 import { tmdbService } from '@/services/tmdb'
 import MovieCard from '@/components/MovieCard.vue'
+import Navbar from './Navbar.vue'
+import AppFooter from './AppFooter.vue'
 
 export default {
   name: 'SearchResults',
   components: {
-    MovieCard
+    MovieCard, TVCard, PersonCard
   },
   data() {
     return {
@@ -91,10 +140,30 @@ export default {
       loadedCastFor: new Set()
     }
   },
+   computed: {
+    filteredResults() {
+      if (this.activeFilter === 'all') {
+        return this.results
+      }
+      return this.results.filter(item => item.media_type === this.activeFilter)
+    },
+
+    movieCount() {
+      return this.results.filter(item => item.media_type === 'movie').length
+    },
+
+    tvCount() {
+      return this.results.filter(item => item.media_type === 'tv').length
+    },
+
+    peopleCount() {
+      return this.results.filter(item => item.media_type === 'person').length
+    }
+  },
   mounted() {
     this.searchQuery = this.$route.query.q || '';
     if (this.searchQuery) {
-      this.searchMovies();
+      this.searchAll();
     }
   },
   watch: {
@@ -104,32 +173,32 @@ export default {
         this.searchQuery = newQuery;
         this.resetSearch();
         if (this.searchQuery) {
-          this.searchMovies();
+          this.searchAll();
         }
       }
     }
   },
   methods: {
-    async searchMovies() {
+    async searchAll() {
       this.loading = this.currentPage === 1;
       this.error = null;
 
       try {
-        const data = await tmdbService.searchMovies(this.searchQuery, this.currentPage);
-        const newMovies = data.results || [];
+        const data = await tmdbService.searchMulti(this.searchQuery, this.currentPage);
+        const newResults = data.results || [];
 
         if (this.currentPage === 1) {
-          this.movies = newMovies;
+          this.results = newResults;
         } else {
-          this.movies = [...this.movies, ...newMovies];
+          this.results = [...this.results, ...newResults];
         }
 
         this.totalPages = data.total_pages || 0;
         this.totalResults = data.total_results || 0;
         this.hasMoreResults = this.currentPage < this.totalPages;
 
-        // Load cast for first batch of movies
-        this.loadCastForVisibleMovies();
+        // Load cast for movies and TV shows
+        await this.loadAdditionalData();
 
       } catch (err) {
         this.error = err.message || 'An error occurred while searching';
@@ -139,6 +208,38 @@ export default {
         this.loadingMore = false;
       }
     },
+
+     async loadAdditionalData() {
+      // Load cast for movies
+      const movies = this.results.filter(item =>
+        item.media_type === 'movie' && !this.loadedCastFor.has(`movie-${item.id}`)
+      ).slice(0, 12);
+
+      for (const movie of movies) {
+        try {
+          const movieDetails = await tmdbService.getCompleteMovieDetails(movie.id);
+          const movieIndex = this.results.findIndex(r => r.id === movie.id && r.media_type === 'movie');
+          if (movieIndex !== -1) {
+            this.results[movieIndex] = {
+              ...this.results[movieIndex],
+              cast: movieDetails.credits.cast
+            };
+          }
+          this.loadedCastFor.add(`movie-${movie.id}`);
+        } catch (error) {
+          console.error(`Error loading cast for movie ${movie.id}:`, error);
+        }
+      }
+
+      // Load cast for TV shows (you'll need to implement getTVShowDetails in your service)
+      const tvShows = this.results.filter(item =>
+        item.media_type === 'tv' && !this.loadedCastFor.has(`tv-${item.id}`)
+      ).slice(0, 12);
+
+      // Note: You'll need to add a getTVShowDetails method to your tmdbService
+      // Similar to getCompleteMovieDetails but for TV shows
+    },
+
 
     async loadCastForVisibleMovies() {
       // Load cast for first 12 movies to improve performance
@@ -189,10 +290,24 @@ export default {
     },
 
     handleMovieClick(movie) {
-      console.log('Movie clicked:', movie); // Add this line
+      console.log('Movie clicked:', movie);
       this.$router.push({
         name: 'MovieDetail',
         params: { id: movie.id }
+      });
+    },
+
+    handleTVShowClick(show) {
+      this.$router.push({
+        name: 'TVShow',
+        params: { id: show.id }
+      });
+    },
+
+    handlePersonClick(person) {
+      this.$router.push({
+        name: 'Person',
+        params: { id: person.id }
       });
     }
   }
