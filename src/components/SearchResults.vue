@@ -113,18 +113,21 @@
       </div>
     </div>
   </div>
+  <app-footer />
 </template>
 
 <script>
 import { tmdbService } from '@/services/tmdb'
 import MovieCard from '@/components/MovieCard.vue'
+import TVCard from '@/components/TVShowsCard.vue'
+import PersonCard from '@/components/PersonCard.vue'
 import Navbar from './Navbar.vue'
 import AppFooter from './AppFooter.vue'
 
 export default {
   name: 'SearchResults',
   components: {
-    MovieCard, TVCard, PersonCard
+    MovieCard, TVCard, PersonCard, AppFooter, Navbar
   },
   data() {
     return {

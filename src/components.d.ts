@@ -19,6 +19,7 @@ declare module 'vue' {
     MovieDetail: typeof import('./components/MovieDetail.vue')['default']
     Movies: typeof import('./components/Movies.vue')['default']
     Navbar: typeof import('./components/Navbar.vue')['default']
+    PersonCard: typeof import('./components/PersonCard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchResults: typeof import('./components/SearchResults.vue')['default']

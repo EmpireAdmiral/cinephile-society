@@ -2,7 +2,6 @@
   <nav class="navbar">
     <div class="nav-container">
       <router-link to="/" class="logo">🎭 Cinephile Society</router-link>
-
       <div class="search-bar">
         <div class="search-wrapper">
           <input

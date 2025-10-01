@@ -1,12 +1,17 @@
 interface Movie {
   id: number;
   title: string;
+  original_title: string;
   overview: string;
   poster_path: string | null;
   backdrop_path: string | null;
   release_date: string;
   vote_average: number;
   vote_count: number;
+
+  // Detailed movie information
+  adult: boolean;
+  video: boolean;
   runtime?: number;
   genres?: Genre[];
   tagline?: string;
@@ -14,7 +19,36 @@ interface Movie {
   revenue?: number;
   spoken_languages?: Language[];
   production_companies?: ProductionCompany[];
+  production_countries?: ProductionCountry[];
+
+  // Additional fields
   genre_ids?: number[];
+  popularity?: number;
+  original_language?: string;
+  belongs_to_collection?: Collection | null;
+  homepage?: string;
+  imdb_id?: string;
+  origin_country?: string[];
+  status?: string;
+
+  // Added after fetching credits
+  cast?: CastMember[];
+
+  // For multi-search results
+  media_type?: 'movie';
+}
+
+// Add these new interfaces
+interface Collection {
+  id: number;
+  name: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+}
+
+interface ProductionCountry {
+  iso_3166_1: string;
+  name: string;
 }
 
 interface Genre {
@@ -50,10 +84,99 @@ interface CrewMember {
   department: string;
   profile_path: string | null;
 }
-
+interface Person {
+  id: number;
+  name: string;
+  also_known_as: string[];
+  biography: string;
+  birthday: string | null;
+  deathday: string | null;
+  gender: number;
+  homepage: string | null;
+  imdb_id: string;
+  known_for_department: string;
+  place_of_birth: string | null;
+  popularity: number;
+  profile_path: string | null;
+  adult: boolean;
+  known_for?: CombinedCastCredit[];
+  media_type?: 'person';
+}
 interface Credits {
   cast: CastMember[];
   crew: CrewMember[];
+}
+
+// For combined credits (full details with character/job info)
+interface CombinedCredits {
+  cast: CombinedCastCredit[];
+  crew: CombinedCrewCredit[];
+}
+
+interface CombinedCastCredit {
+  id: number;
+  media_type: 'movie' | 'tv';
+
+  // Movie fields
+  title?: string;
+  original_title?: string;
+  release_date?: string;
+
+  // TV fields
+  name?: string;
+  original_name?: string;
+  first_air_date?: string;
+  episode_count?: number;
+
+  // Common fields
+  adult: boolean;
+  backdrop_path: string | null;
+  genre_ids: number[];
+  original_language: string;
+  overview: string;
+  popularity: number;
+  poster_path: string | null;
+  video?: boolean;
+  vote_average: number;
+  vote_count: number;
+
+  // Cast-specific fields
+  character: string;
+  credit_id: string;
+  order: number;
+}
+
+interface CombinedCrewCredit {
+  id: number;
+  media_type: 'movie' | 'tv';
+
+  // Movie fields
+  title?: string;
+  original_title?: string;
+  release_date?: string;
+
+  // TV fields
+  name?: string;
+  original_name?: string;
+  first_air_date?: string;
+  episode_count?: number;
+
+  // Common fields
+  adult: boolean;
+  backdrop_path: string | null;
+  genre_ids: number[];
+  original_language: string;
+  overview: string;
+  popularity: number;
+  poster_path: string | null;
+  video?: boolean;
+  vote_average: number;
+  vote_count: number;
+
+  // Crew-specific fields
+  credit_id: string;
+  department: string;
+  job: string;
 }
 
 interface SearchResponse {
@@ -67,13 +190,66 @@ interface MovieDetails extends Movie {
   credits: Credits;
 }
 
+
+interface MultiSearchResult {
+  id: number;
+  media_type: 'movie' | 'tv' | 'person';
+  adult: boolean;
+  title?: string;
+  original_title?: string;
+  release_date?: string;
+  video?: boolean;
+  name?: string;
+  original_name?: string;
+  first_air_date?: string;
+  origin_country?: string[];
+  gender?: number;
+  known_for_department?: string;
+  known_for?: Array<{
+    id: number;
+    media_type: string;
+    title?: string;
+    name?: string;
+    overview: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
+    release_date?: string;
+    first_air_date?: string;
+    vote_average: number;
+    vote_count: number;
+  }>;
+  popularity: number;
+  overview?: string;
+  poster_path?: string | null;
+  profile_path?: string | null;
+  backdrop_path?: string | null;
+  original_language?: string;
+  genre_ids?: number[];
+  vote_average?: number;
+  vote_count?: number;
+}
+
+interface MultiSearchResponse {
+  page: number;
+  results: MultiSearchResult[];
+  total_pages: number;
+  total_results: number;
+}
+
+interface RecommendationsResponse {
+  page: number;
+  results: Movie[];
+  total_pages: number;
+  total_results: number;
+}
+
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 const debug = true;
 
 export const tmdbService = {
 
-  searchAll: async (query: string, page = 1) => {
+  searchAll: async (query: string, page: number = 1): Promise<MultiSearchResponse> => {
     if (!API_KEY) {
       throw new Error('TMDB API key not configured');
     }
@@ -89,10 +265,7 @@ export const tmdbService = {
     return response.json();
   },
 
-  /**
-   * Get multi-search suggestions for autocomplete
-   */
-  getMultiSearchSuggestions: async (query: string) => {
+  getMultiSearchSuggestions: async (query: string): Promise<MultiSearchResult[]> => {
     if (!API_KEY) {
       throw new Error('TMDB API key not configured');
     }
@@ -107,10 +280,10 @@ export const tmdbService = {
       );
 
       if (response.ok) {
-        const data = await response.json();
+        const data: MultiSearchResponse = await response.json();
         // Return top 5 suggestions, prioritizing movies and TV shows over people
         return data.results
-          .filter((item:any) => item.media_type === 'movie' || item.media_type === 'tv')
+          .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
           .slice(0, 5);
       }
 
@@ -289,6 +462,95 @@ export const tmdbService = {
     return response.json();
   },
 
+  /**
+   * Get list of movie genres
+   */
+  getMovieGenres: async (): Promise<Genre[]> => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+    const response = await fetch(
+      `${BASE_URL}/genre/movie/list?api_key=${API_KEY}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch genres');
+    }
+    const data = await response.json();
+    return data.genres;
+  },
+
+  /**
+   * Get list of TV show genres
+   */
+  getTVGenres: async (): Promise<Genre[]> => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+    const response = await fetch(
+      `${BASE_URL}/genre/tv/list?api_key=${API_KEY}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch TV genres');
+    }
+    const data = await response.json();
+    return data.genres;
+  },
+
+  /**
+   * Get a list of recommended movies based on a movie ID
+   * @param movieId The ID of the movie to get recommendations for
+   * @param page The page of results to fetch (default is 1)
+   * @returns A promise that resolves to a list of recommended movies
+   * @throws An error if the API key is not configured or if the fetch fails
+   * @example
+   * const recommendations = await tmdbService.getMovieRecommendations(123456);
+   */
+  getMovieRecommendations: async (movieId: number | string, page = 1): Promise<SearchResponse> => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+    const response = await fetch(
+      `${BASE_URL}/movie/${movieId}/recommendations?api_key=${API_KEY}&page=${page}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch movie recommendations');
+    }
+    return response.json();
+  },
+
+  /*
+  * Get Person Details by ID
+  */
+  getPersonDetails: async (personId: number | string): Promise<Person> => {
+    if (!API_KEY) {
+       throw new Error('TMDB API key not configured');
+     }
+     const response = await fetch(
+       `${BASE_URL}/person/${personId}?api_key=${API_KEY}`
+     );
+     if (!response.ok) {
+       throw new Error('Failed to fetch person details');
+     }
+     return response.json();
+   },
+   /**
+ * Get combined movie and TV credits for a person
+ */
+  getPersonCombinedCredits: async (personId: string | number): Promise<CombinedCredits> => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+
+    const response = await fetch(
+      `${BASE_URL}/person/${personId}/combined_credits?api_key=${API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch person credits');
+    }
+
+    return response.json();
+  }
 }
 
 // Export types for use in components
@@ -297,9 +559,18 @@ export type {
   Genre,
   Language,
   ProductionCompany,
+  ProductionCountry,
+  Collection,
   CastMember,
   CrewMember,
   Credits,
   SearchResponse,
-  MovieDetails
+  MovieDetails,
+  MultiSearchResult,
+  MultiSearchResponse,
+  RecommendationsResponse,
+  Person,
+  CombinedCredits,
+  CombinedCastCredit,
+  CombinedCrewCredit
 };
