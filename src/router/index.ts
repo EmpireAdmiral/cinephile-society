@@ -1,9 +1,10 @@
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '@/views/Home.vue'
-import MovieDetail from '@/components/MovieDetail.vue'
+import MovieDetail from '@/views/MovieDetail.vue'
 import SearchResults from '@/components/SearchResults.vue'
 import Discover from '@/views/Discover.vue'
+import TVShowDetail from '@/views/TVShowDetail.vue'
 
 const routes = [
   { path: '/', name: 'Home', component: Home },
@@ -26,6 +27,18 @@ const routes = [
     component: MovieDetail,
     props: true
   },
+  {
+    path: '/tv/:id',
+    name: 'TvShowDetail',
+    component: TVShowDetail,
+    props: true
+  },
+  // {
+  //   path: '/person/:id',
+  //   name: 'PersonDetail',
+  //   component: PersonDetail,
+  //   props: true
+  // },
   // Add other routes as needed
 ]
 

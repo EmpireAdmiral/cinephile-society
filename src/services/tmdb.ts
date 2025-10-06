@@ -243,6 +243,81 @@ interface RecommendationsResponse {
   total_results: number;
 }
 
+interface TVShow {
+  id: number;
+  name: string;
+  original_name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  first_air_date: string;
+  last_air_date: string;
+  vote_average: number;
+  vote_count: number;
+
+  // TV-specific fields
+  number_of_seasons: number;
+  number_of_episodes: number;
+  episode_run_time: number[];
+  genres?: Genre[];
+  tagline?: string;
+  spoken_languages?: Language[];
+  production_companies?: ProductionCompany[];
+  created_by?: Creator[];
+  networks?: Network[];
+  seasons?: Season[];
+  status?: string;
+  type?: string;
+
+  // Additional fields
+  genre_ids?: number[];
+  popularity?: number;
+  original_language?: string;
+  origin_country?: string[];
+  adult?: boolean;
+
+  media_type?: 'tv';
+}
+
+interface Creator {
+  id: number;
+  name: string;
+  profile_path: string | null;
+}
+
+interface Network {
+  id: number;
+  name: string;
+  logo_path: string | null;
+  origin_country: string;
+}
+
+interface Season {
+  id: number;
+  season_number: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  air_date: string;
+  episode_count: number;
+}
+
+interface Episode {
+  id: number;
+  episode_number: number;
+  name: string;
+  overview: string;
+  still_path: string | null;
+  air_date: string;
+  vote_average: number;
+  vote_count: number;
+  runtime: number;
+}
+
+interface TVShowDetails extends TVShow {
+  credits: Credits;
+}
+
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 const debug = true;
@@ -282,9 +357,7 @@ export const tmdbService = {
       if (response.ok) {
         const data: MultiSearchResponse = await response.json();
         // Return top 5 suggestions, prioritizing movies and TV shows over people
-        return data.results
-          .filter(item => item.media_type === 'movie' || item.media_type === 'tv')
-          .slice(0, 5);
+        return data.results.slice(0, 5);
       }
 
       return [];
@@ -547,6 +620,57 @@ export const tmdbService = {
 
     if (!response.ok) {
       throw new Error('Failed to fetch person credits');
+    }
+
+    return response.json();
+  },
+
+  getCompleteTVShowDetails: async (tvId: string | number): Promise<TVShowDetails> => {
+  if (!API_KEY) {
+    throw new Error('TMDB API key not configured');
+  }
+
+  try {
+    const [tvResponse, creditsResponse] = await Promise.all([
+      fetch(`${BASE_URL}/tv/${tvId}?api_key=${API_KEY}`),
+      fetch(`${BASE_URL}/tv/${tvId}/credits?api_key=${API_KEY}`)
+    ]);
+
+    if (!tvResponse.ok) {
+      throw new Error('TV show not found');
+    }
+
+    const tvData = await tvResponse.json();
+    let credits: Credits = { cast: [], crew: [] };
+
+    if (creditsResponse.ok) {
+      credits = await creditsResponse.json();
+    }
+
+    return {
+      ...tvData,
+      credits
+    };
+  } catch (error) {
+    console.error('Error fetching TV show details:', error);
+    throw error instanceof Error ? error : new Error('An error occurred while fetching TV show details');
+  }
+},
+
+/**
+ * Get season details with episodes
+ */
+  getTVSeasonDetails: async (tvId: string | number, seasonNumber: number) => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+
+    const response = await fetch(
+      `${BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${API_KEY}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch season details');
     }
 
     return response.json();

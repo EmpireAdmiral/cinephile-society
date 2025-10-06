@@ -195,7 +195,7 @@
 
 <script>
 import { tmdbService } from '@/services/tmdb'
-import Navbar from './Navbar.vue'
+import Navbar from '@/components/Navbar.vue'
 export default {
   name: 'MovieDetail',
   props: {

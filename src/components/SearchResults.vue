@@ -44,7 +44,7 @@
       <!-- Loading State -->
       <div v-if="loading && currentPage === 1" class="loading-container">
         <div class="loading-spinner"></div>
-        <span class="loading-text">Searching movies...</span>
+        <span class="loading-text">Fetching results...</span>
       </div>
 
       <!-- Error State -->
@@ -59,7 +59,7 @@
       </div>
 
       <!-- No Results -->
-      <div v-else-if="movies.length === 0 && searchQuery" class="no-results">
+      <div v-else-if="results.length === 0 && searchQuery" class="no-results">
         <div class="no-results-card">
           <svg class="no-results-icon" fill="currentColor" viewBox="0 0 24 24">
             <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
@@ -70,7 +70,7 @@
       </div>
 
       <!-- Search Results -->
-      <div v-else-if="movies.length > 0" class="results-section">
+      <div v-else-if="results.length > 0" class="results-section">
         <div class="results-grid">
           <!-- Movies -->
           <MovieCard
@@ -131,7 +131,7 @@ export default {
   },
   data() {
     return {
-      movies: [],
+      results: [],
       loading: false,
       loadingMore: false,
       error: null,
@@ -140,11 +140,13 @@ export default {
       totalPages: 0,
       totalResults: 0,
       hasMoreResults: false,
-      loadedCastFor: new Set()
+      loadedCastFor: new Set(),
+      activeFilter: 'all' // 'all', 'movie', 'tv', 'person'
     }
   },
    computed: {
     filteredResults() {
+
       if (this.activeFilter === 'all') {
         return this.results
       }
@@ -187,7 +189,8 @@ export default {
       this.error = null;
 
       try {
-        const data = await tmdbService.searchMulti(this.searchQuery, this.currentPage);
+        const data = await tmdbService.searchAll(this.searchQuery, this.currentPage);
+        console.log('Search Data:', data);
         const newResults = data.results || [];
 
         if (this.currentPage === 1) {
@@ -276,13 +279,14 @@ export default {
     },
 
     resetSearch() {
-      this.movies = [];
+      this.results = [];
       this.currentPage = 1;
       this.totalPages = 0;
       this.totalResults = 0;
       this.hasMoreResults = false;
       this.error = null;
       this.loadedCastFor.clear();
+      this.activeFilter = 'all';
     },
 
     resetAndSearch() {
@@ -302,7 +306,7 @@ export default {
 
     handleTVShowClick(show) {
       this.$router.push({
-        name: 'TVShow',
+        name: 'TvShowDetail',
         params: { id: show.id }
       });
     },

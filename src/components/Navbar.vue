@@ -97,7 +97,7 @@ export default {
 
     const performSearch = () => {
       if (searchQuery.value.trim()) {
-        console.log('Searching for:', searchQuery.value)
+        console.log('Searching for:', searchQuery.value.trim());
         // Navigate to search results page
         router.push({
           name: 'SearchResults', // Changed from 'Search' to match the router config
@@ -113,6 +113,7 @@ export default {
       try {
         const results = await tmdbService.getMultiSearchSuggestions(searchQuery.value)
         suggestions.value = results
+        console.log('Suggestions:', results);
         // Keep suggestions visible when we have results
         showSuggestions.value = true
       } catch (error) {
