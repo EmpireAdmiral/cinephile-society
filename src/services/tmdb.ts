@@ -356,8 +356,7 @@ export const tmdbService = {
 
       if (response.ok) {
         const data: MultiSearchResponse = await response.json();
-        // Return top 5 suggestions, prioritizing movies and TV shows over people
-        return data.results.slice(0, 5);
+        return data.results.slice(0, 10);
       }
 
       return [];

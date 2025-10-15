@@ -105,16 +105,16 @@
             <div v-if="movie.tagline" class="tagline">
               "{{ movie.tagline }}"
             </div>
+
+            <div v-if="movie.overview" class="overview-text">
+              {{ movie.overview}}
+            </div>
           </div>
         </div>
 
         <!-- Details Grid -->
         <div class="details-grid">
           <!-- Overview Section -->
-          <div class="detail-card overview-card">
-            <h3 class="card-title">Overview</h3>
-            <p class="overview-text">{{ movie.overview || 'No overview available.' }}</p>
-          </div>
 
           <!-- Cast Section -->
           <div v-if="cast.length > 0" class="detail-card cast-card">
@@ -234,6 +234,14 @@ export default {
     cast() {
       if (!this.movie || !this.movie.credits) return [];
       return this.movie.credits.cast || [];
+    },
+  },
+  watch: {
+    // Watch for changes to the id prop and re-fetch data
+    id(newId) {
+      if (newId) {
+        this.fetchMovieDetails();
+      }
     }
   },
   async mounted() {
@@ -360,7 +368,7 @@ export default {
 
 .backdrop-section {
   position: relative;
-  height: 400px;
+  height: 600px;
   overflow: hidden;
 }
 
@@ -371,8 +379,6 @@ export default {
   right: 0;
   bottom: 0;
   background-size: cover;
-  background-position: center;
-  filter: blur(2px);
   opacity: 0.3;
 }
 
@@ -382,15 +388,14 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom, transparent 0%, var(--gothic-black) 100%);
 }
 
 .content-container {
   position: relative;
-  max-width: 1400px;
+  max-width: 1500px;
   margin: 0 auto;
   padding: 0 2rem;
-  margin-top: -200px;
+  margin-top: -500px;
   z-index: 10;
 }
 
@@ -409,7 +414,7 @@ export default {
 
 .poster-container {
   width: 300px;
-  height: 450px;
+  aspect-ratio: calc(2 / 3);
   border-radius: 15px;
   overflow: hidden;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
@@ -490,16 +495,15 @@ export default {
   flex-direction: column;
   justify-content: center;
   text-align: center;
+  margin-top: -500px;
+  margin-left: -10rem;
 }
 
 .movie-title {
   font-size: 3rem;
   font-weight: bold;
   margin-bottom: 1rem;
-  background: linear-gradient(45deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-gothic-primary);
 }
 
 .movie-meta {
@@ -557,12 +561,13 @@ export default {
 }
 
 .genre-tag {
-  background: rgba(102, 126, 234, 0.2);
-  color: #667eea;
+  background: var(--gothic-amethyst);
+  color: var(--text-gothic-primary);
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 500;
+  opacity: 0.9;
 }
 
 .tagline {
@@ -570,6 +575,17 @@ export default {
   font-style: italic;
   color: var(--text-gothic-accent);
   text-align: center;
+  overflow: hidden;
+}
+
+.overview-text {
+  font-size: 1rem;
+  color: var(--text-gothic-primary);
+  text-align: center;
+  overflow: hidden;
+  max-width: 800px;
+  padding: 0 1rem;
+  margin: 1rem auto 0;
 }
 
 .details-grid {
@@ -594,15 +610,6 @@ export default {
   padding-bottom: 0.5rem;
 }
 
-.overview-card {
-  grid-column: 1 / -1;
-}
-
-.overview-text {
-  line-height: 1.7;
-  color: var(--text-gothic-primary);
-  font-size: 1.1rem;
-}
 
 .cast-grid {
   display: grid;

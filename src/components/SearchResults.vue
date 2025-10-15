@@ -141,16 +141,16 @@ export default {
       totalResults: 0,
       hasMoreResults: false,
       loadedCastFor: new Set(),
-      activeFilter: 'all' // 'all', 'movie', 'tv', 'person'
+      activeFilter: 'all'
     }
   },
    computed: {
     filteredResults() {
 
       if (this.activeFilter === 'all') {
-        return this.results
+        return this.results;
       }
-      return this.results.filter(item => item.media_type === this.activeFilter)
+      return this.results.filter(item => item.media_type === this.activeFilter);
     },
 
     movieCount() {
@@ -439,6 +439,12 @@ export default {
 
 .results-section {
   padding: 2rem 0;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
 }
 
 .movies-grid {

@@ -97,7 +97,6 @@ export default {
 
     const performSearch = () => {
       if (searchQuery.value.trim()) {
-        console.log('Searching for:', searchQuery.value.trim());
         // Navigate to search results page
         router.push({
           name: 'SearchResults', // Changed from 'Search' to match the router config
@@ -113,11 +112,10 @@ export default {
       try {
         const results = await tmdbService.getMultiSearchSuggestions(searchQuery.value)
         suggestions.value = results
-        console.log('Suggestions:', results);
+
         // Keep suggestions visible when we have results
         showSuggestions.value = true
       } catch (error) {
-        console.error('Error fetching suggestions:', error)
         suggestions.value = []
         showSuggestions.value = false
       }
@@ -147,12 +145,12 @@ export default {
 
       if (item.media_type === 'movie') {
         router.push({
-          name: 'Movies',
+          name: 'MovieDetail',
           params: { id: item.id }
         })
       } else if (item.media_type === 'tv') {
         router.push({
-          name: 'TVShow',
+          name: 'TvShowDetail',
           params: { id: item.id }
         })
       } else {
