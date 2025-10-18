@@ -83,14 +83,21 @@
               <span v-if="movie.runtime" class="meta-item">
                 {{ formatRuntime(movie.runtime) }}
               </span>
-              <div v-if="movie.vote_average > 0" class="rating-container">
-                <div class="rating-stars">
-                  <svg v-for="star in 5" :key="star" class="star" :class="{ filled: star <= Math.round(movie.vote_average / 2) }" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
+             <div v-if="movie.vote_average > 0" class="rating-container">
+               <div class="donut-wrapper">
+                  <vc-donut
+                    :background="'#6a4c7c'"
+                    :sections="sections"
+                    :size="100"
+                    :unit="px"
+                    :thickness="40"
+                    :animation="true"
+                    :auto-adjust-text-size
+                    :suppress-validation-warnings="false">
+                    <h1>{{ ((movie.vote_average / 10) * 100).toFixed(0) }}%</h1>
+                  </vc-donut>
+                  <span class="vote-count">({{ formatVoteCount(movie.vote_count) }} votes)</span>
                 </div>
-                <span class="rating-text">{{ movie.vote_average.toFixed(1) }}/10</span>
-                <span class="vote-count">({{ formatVoteCount(movie.vote_count) }} votes)</span>
               </div>
             </div>
 
@@ -196,8 +203,12 @@
 <script>
 import { tmdbService } from '@/services/tmdb'
 import Navbar from '@/components/Navbar.vue'
+import { VcDonut } from 'vue-css-donut-chart';
 export default {
   name: 'MovieDetail',
+  components: {
+    VcDonut
+  },
   props: {
     id: {
       type: String,
@@ -212,6 +223,19 @@ export default {
     }
   },
   computed: {
+    sections() {
+      const percentage = (this.movie.vote_average / 10) * 100;
+      return [
+        {
+          value: percentage,
+          color: '#d4af37'
+        },
+        {
+          value: 100 - percentage,
+          color: '#4a4a4a'
+        }
+      ];
+    },
     director() {
       if (!this.movie || !this.movie.credits) return null;
       return this.movie.credits.crew.find(person => person.job === 'Director') || null;
@@ -368,7 +392,7 @@ export default {
 
 .backdrop-section {
   position: relative;
-  height: 600px;
+  height: 400px;
   overflow: hidden;
 }
 
@@ -379,6 +403,8 @@ export default {
   right: 0;
   bottom: 0;
   background-size: cover;
+  background-position: center;
+  filter: blur(2px);
   opacity: 0.3;
 }
 
@@ -388,14 +414,15 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
+  background: linear-gradient(to bottom, transparent 0%, var(--gothic-black) 100%);
 }
 
 .content-container {
   position: relative;
-  max-width: 1500px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
-  margin-top: -500px;
+  margin-top: -200px;
   z-index: 10;
 }
 
@@ -403,6 +430,7 @@ export default {
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 3rem;
+  align-items: start;
   margin-bottom: 3rem;
 }
 
@@ -493,10 +521,8 @@ export default {
 .title-section {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
-  margin-top: -500px;
-  margin-left: -10rem;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 .movie-title {
@@ -509,7 +535,6 @@ export default {
 .movie-meta {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 2rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
@@ -523,28 +548,28 @@ export default {
 
 .rating-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
-.rating-stars {
+.donut-center-text {
   display: flex;
-  gap: 2px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
-.star {
-  width: 18px;
-  height: 18px;
-  color: var(--text-gothic-secondary);
-}
-
-.star.filled {
-  color: #ffd700;
-}
-
-.rating-text {
-  font-weight: 600;
+.donut-percentage {
+  font-size: 1.8rem;
+  font-weight: bold;
   color: var(--text-gothic-primary);
+}
+
+.donut-wrapper {
+  width: 200px;
+  height: 200px;
 }
 
 .vote-count {
@@ -554,7 +579,6 @@ export default {
 
 .genres-container {
   display: flex;
-  justify-content: center;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
@@ -574,18 +598,13 @@ export default {
   font-size: 1.2rem;
   font-style: italic;
   color: var(--text-gothic-accent);
-  text-align: center;
-  overflow: hidden;
+  margin-bottom: 1rem;
 }
 
 .overview-text {
   font-size: 1rem;
   color: var(--text-gothic-primary);
-  text-align: center;
-  overflow: hidden;
-  max-width: 800px;
-  padding: 0 1rem;
-  margin: 1rem auto 0;
+  line-height: 1.6;
 }
 
 .details-grid {
@@ -609,7 +628,6 @@ export default {
   border-bottom: 2px solid rgba(102, 126, 234, 0.3);
   padding-bottom: 0.5rem;
 }
-
 
 .cast-grid {
   display: grid;
@@ -715,7 +733,6 @@ export default {
 
   .poster-container {
     width: 250px;
-    height: 375px;
   }
 
   .movie-title {
@@ -736,7 +753,6 @@ export default {
   .movie-header {
     grid-template-columns: 1fr;
     gap: 1.5rem;
-    text-align: center;
   }
 
   .poster-section {
@@ -745,16 +761,19 @@ export default {
 
   .poster-container {
     width: 200px;
-    height: 300px;
   }
 
   .movie-title {
     font-size: 2rem;
+    text-align: center;
+  }
+
+  .title-section {
+    text-align: center;
   }
 
   .movie-meta {
-    flex-direction: column;
-    gap: 1rem;
+    justify-content: center;
   }
 
   .genres-container {
@@ -786,7 +805,6 @@ export default {
 
   .poster-container {
     width: 180px;
-    height: 270px;
   }
 
   .detail-card {
