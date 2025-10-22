@@ -551,6 +551,19 @@ export const tmdbService = {
     return data.genres;
   },
 
+  getMovieReviews: async (movieId: number | string, page = 1) => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+    const response = await fetch(
+      `${BASE_URL}/movie/${movieId}/reviews?api_key=${API_KEY}&page=${page}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch movie reviews');
+    }
+    return response.json();
+  },
+
   /**
    * Get list of TV show genres
    */
