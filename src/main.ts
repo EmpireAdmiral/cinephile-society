@@ -21,9 +21,9 @@ import '@/styles/default-styles.css'
 import 'vue-css-donut-chart/dist/vcdonut.css';
 
 // import only the icons you use
-import { faPlus, faStar, faHeart, faCheck, faUser, faChevronLeft, faChevronRight, faEye} from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faStar, faHeart, faCheck, faUser, faChevronLeft, faChevronRight, faChevronDown, faChevronUp, faEye} from '@fortawesome/free-solid-svg-icons'
 import { fa } from 'vuetify/locale'
-library.add(faPlus, faStar, faHeart, faCheck, faUser, faChevronLeft, faChevronRight, faEye)
+library.add(faPlus, faStar, faHeart, faCheck, faUser, faChevronLeft, faChevronRight, faChevronDown, faChevronUp, faEye)
 
 const app = createApp(App)
 app.component('font-awesome-icon', FontAwesomeIcon)

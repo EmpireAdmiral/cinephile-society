@@ -7,7 +7,7 @@
           <input
             type="text"
             v-model="searchQuery"
-            placeholder="Search movies, shows, actors..."
+            placeholder="Search movies, shows, people..."
             @keyup.enter="performSearch"
             @input="onSearchInput"
             @focus="showSuggestions = true"
@@ -15,7 +15,6 @@
             class="search-input"
           >
 
-          <!-- Clear button -->
           <button
             v-if="searchQuery"
             type="button"
@@ -25,7 +24,6 @@
             ×
           </button>
 
-          <!-- Search Suggestions Dropdown -->
           <div
             v-if="showSuggestions && suggestions.length > 0"
             class="suggestions-dropdown"
@@ -43,10 +41,16 @@
                 :alt="suggestion.title"
                 class="suggestion-poster"
               />
-              <div class="suggestion-info">
+              <div v-if="suggestion.media_type == 'movie'" class="suggestion-info">
                 <p class="suggestion-title">{{ suggestion.title }}</p>
                 <p class="suggestion-year">
                   {{ suggestion.release_date ? new Date(suggestion.release_date).getFullYear() : 'Unknown' }}
+                </p>
+              </div>
+              <div v-else-if="suggestion.media_type == 'tv'" class="suggestion-info">
+                <p class="suggestion-title">{{ suggestion.name }}</p>
+                <p class="suggestion-year">
+                  {{ suggestion.first_air_date ? new Date(suggestion.first_air_date).getFullYear() : 'Unknown' }}
                 </p>
               </div>
             </button>
@@ -62,7 +66,6 @@
         <li v-if="isLoggedIn">
           <router-link to="/profile" @click="closeMobileMenu">Profile</router-link>
         </li>
-        <!-- Show Sign In only if user is NOT logged in -->
          <li v-if="!isLoggedIn">
           <router-link to="/login" @click="closeMobileMenu">Sign In</router-link>
         </li>
@@ -92,14 +95,10 @@ export default {
     const searchTimeout = ref(null)
     const router = useRouter()
 
-    // TMDB API configuration
-    const apiKey = process.env.VUE_APP_TMDB_API_KEY || ''
-
-    const performSearch = () => {
+    const getSearchResults = () => {
       if (searchQuery.value.trim()) {
-        // Navigate to search results page
         router.push({
-          name: 'SearchResults', // Changed from 'Search' to match the router config
+          name: 'SearchResults',
           query: { q: searchQuery.value.trim() }
         })
         searchQuery.value = ''
@@ -108,12 +107,11 @@ export default {
       }
     }
 
-    const fetchSuggestions = async () => {
+    const getSuggestions = async () => {
       try {
         const results = await tmdbService.getMultiSearchSuggestions(searchQuery.value)
         suggestions.value = results
-
-        // Keep suggestions visible when we have results
+        console.log('Suggestions:', results);
         showSuggestions.value = true
       } catch (error) {
         suggestions.value = []
@@ -122,15 +120,13 @@ export default {
     }
 
     const onSearchInput = () => {
-      // Clear existing timeout
       if (searchTimeout.value) {
         clearTimeout(searchTimeout.value)
       }
 
-      // Debounce search suggestions
       if (searchQuery.value.trim().length >= 2) {
         searchTimeout.value = setTimeout(() => {
-          fetchSuggestions()
+          getSuggestions()
         }, 800)
       } else {
         suggestions.value = []
@@ -139,7 +135,6 @@ export default {
     }
 
     const selectSuggestion = (item) => {
-      // Clear the search and hide suggestions
       searchQuery.value = ''
       showSuggestions.value = false
 
@@ -153,7 +148,13 @@ export default {
           name: 'TvShowDetail',
           params: { id: item.id }
         })
-      } else {
+      } else if (item.media_type === 'person') {
+        router.push({
+          name: 'PersonDetail',
+          params: { id: item.id }
+        })
+      }
+      else {
         router.push({
           name: 'SearchResults',
           query: { q: item.title || item.name }
@@ -168,7 +169,6 @@ export default {
     }
 
     const hideSuggestions = () => {
-      // Small delay to allow for suggestion clicks
       setTimeout(() => {
         showSuggestions.value = false
       }, 250)
@@ -208,14 +208,14 @@ export default {
       mobileMenuOpen,
       showSuggestions,
       suggestions,
-      performSearch,
+      performSearch: getSearchResults,
       onSearchInput,
       selectSuggestion,
       clearSearch,
       hideSuggestions,
       toggleMobileMenu,
       closeMobileMenu,
-      isLoggedIn: ref(true) // Placeholder for authentication state
+      isLoggedIn: ref(true) // Replace with actual authentication logic
     }
   }
 }

@@ -30,15 +30,10 @@ interface Movie {
   imdb_id?: string;
   origin_country?: string[];
   status?: string;
-
-  // Added after fetching credits
   cast?: CastMember[];
-
-  // For multi-search results
   media_type?: 'movie';
 }
 
-// Add these new interfaces
 interface Collection {
   id: number;
   name: string;
@@ -69,21 +64,52 @@ interface ProductionCompany {
   origin_country: string;
 }
 
-interface CastMember {
-  id: number;
-  name: string;
+interface Role {
+  credit_id: string;
   character: string;
+  episode_count: number;
+}
+
+interface Job {
+  credit_id: string;
+  job: string;
+  episode_count: number;
+}
+
+interface CastMember {
+  adult: boolean;
+  gender: number;
+  id: number;
+  known_for_department: string;
+  name: string;
+  original_name: string;
+  popularity: number;
   profile_path: string | null;
+  roles: Role[];
+  total_episode_count: number;
   order: number;
 }
 
 interface CrewMember {
+  adult: boolean;
+  gender: number;
   id: number;
+  known_for_department: string;
   name: string;
-  job: string;
-  department: string;
+  original_name: string;
+  popularity: number;
   profile_path: string | null;
+  jobs: Job[];
+  department: string;
+  total_episode_count: number;
 }
+
+interface CompleteTVCredits {
+  cast: CastMember[];
+  crew: CrewMember[];
+  id: number;
+}
+
 interface Person {
   id: number;
   name: string;
@@ -275,7 +301,6 @@ interface TVShow {
   original_language?: string;
   origin_country?: string[];
   adult?: boolean;
-
   media_type?: 'tv';
 }
 
@@ -423,6 +448,36 @@ export const tmdbService = {
     } catch (error) {
       console.error('Error fetching movie details:', error);
       throw error instanceof Error ? error : new Error('An error occurred while fetching movie details');
+    }
+  },
+
+  getCompleteTVShowDetails: async (series_id: string | number): Promise<TVShowDetails> => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+    try {
+      const [tvResponse, creditsResponse] = await Promise.all([
+        fetch(`${BASE_URL}/tv/${series_id}?api_key=${API_KEY}`),
+        fetch(`${BASE_URL}/tv/${series_id}/aggregate_credits?api_key=${API_KEY}`)
+      ]);
+
+      if (!tvResponse.ok) {
+        throw new Error('TV show not found');
+      }
+      if (!creditsResponse.ok) {
+        throw new Error('Failed to fetch TV show credits');
+      }
+
+      const tvData: TVShow = await tvResponse.json();
+      let credits = await creditsResponse.json();
+
+      return {
+        ...tvData,
+        credits
+      };
+    } catch (error) {
+      console.error('Error fetching TV show details:', error);
+      throw error instanceof Error ? error : new Error('An error occurred while fetching TV show details');
     }
   },
 
@@ -581,6 +636,19 @@ export const tmdbService = {
     return data.genres;
   },
 
+  getTvShowsReviews: async (series_id: number | string, page = 1) => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+    const response = await fetch(
+      `${BASE_URL}/tv/${series_id}/reviews?api_key=${API_KEY}&page=${page}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch TV show reviews');
+    }
+    return response.json();
+  },
+
   /**
    * Get a list of recommended movies based on a movie ID
    * @param movieId The ID of the movie to get recommendations for
@@ -599,6 +667,19 @@ export const tmdbService = {
     );
     if (!response.ok) {
       throw new Error('Failed to fetch movie recommendations');
+    }
+    return response.json();
+  },
+
+  getTvShowRecommendations: async (series_id: number | string, page = 1): Promise<SearchResponse> => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+    const response = await fetch(
+      `${BASE_URL}/tv/${series_id}/recommendations?api_key=${API_KEY}&page=${page}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch TV show recommendations');
     }
     return response.json();
   },
@@ -637,54 +718,48 @@ export const tmdbService = {
     return response.json();
   },
 
-  getCompleteTVShowDetails: async (tvId: string | number): Promise<TVShowDetails> => {
-  if (!API_KEY) {
-    throw new Error('TMDB API key not configured');
-  }
-
-  try {
-    const [tvResponse, creditsResponse] = await Promise.all([
-      fetch(`${BASE_URL}/tv/${tvId}?api_key=${API_KEY}`),
-      fetch(`${BASE_URL}/tv/${tvId}/credits?api_key=${API_KEY}`)
-    ]);
-
-    if (!tvResponse.ok) {
-      throw new Error('TV show not found');
-    }
-
-    const tvData = await tvResponse.json();
-    let credits: Credits = { cast: [], crew: [] };
-
-    if (creditsResponse.ok) {
-      credits = await creditsResponse.json();
-    }
-
-    return {
-      ...tvData,
-      credits
-    };
-  } catch (error) {
-    console.error('Error fetching TV show details:', error);
-    throw error instanceof Error ? error : new Error('An error occurred while fetching TV show details');
-  }
-},
-
 /**
  * Get season details with episodes
  */
-  getTVSeasonDetails: async (tvId: string | number, seasonNumber: number) => {
+  getTVSeasonDetails: async (series_id: string | number, seasonNumber: number) => {
     if (!API_KEY) {
       throw new Error('TMDB API key not configured');
     }
 
     const response = await fetch(
-      `${BASE_URL}/tv/${tvId}/season/${seasonNumber}?api_key=${API_KEY}`
+      `${BASE_URL}/tv/${series_id}/season/${seasonNumber}?api_key=${API_KEY}`
     );
 
     if (!response.ok) {
       throw new Error('Failed to fetch season details');
     }
 
+    return response.json();
+  },
+
+  getTvSeasonEpisodes: async (series_id: string | number, seasonNumber: number) => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+    const response = await fetch(
+      `${BASE_URL}/tv/${series_id}/season/${seasonNumber}/episodes?api_key=${API_KEY}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch season episodes');
+    }
+    return response.json();
+  },
+
+  getTVSeasonEpisodeDetails: async (series_id: string | number, seasonNumber: number, episodeNumber: number) => {
+    if (!API_KEY) {
+      throw new Error('TMDB API key not configured');
+    }
+    const response = await fetch(
+      `${BASE_URL}/tv/${series_id}/season/${seasonNumber}/episode/${episodeNumber}?api_key=${API_KEY}`
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch episode details');
+    }
     return response.json();
   }
 }
@@ -708,5 +783,14 @@ export type {
   Person,
   CombinedCredits,
   CombinedCastCredit,
-  CombinedCrewCredit
+  CombinedCrewCredit,
+  TVShow,
+  TVShowDetails,
+  Creator,
+  Network,
+  Season,
+  Episode,
+  Role,
+  Job,
+  CompleteTVCredits
 };

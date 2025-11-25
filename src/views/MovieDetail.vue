@@ -1,6 +1,7 @@
 <template>
   <Navbar />
   <div class="movie-detail-page">
+
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
@@ -55,6 +56,8 @@
               <span v-if="movie.runtime" class="meta-item">
                 {{ formatRuntime(movie.runtime) }}
               </span>
+
+              <!-- User Score Donut -->
               <div v-if="movie.vote_average > 0" class="donut-container">
                 <span class="user-score">User score</span>
                 <vc-donut :background="'#6a4c7c'" :sections="sections" :size="100" :unit="px" :thickness="40"
@@ -77,6 +80,7 @@
               "{{ movie.tagline }}"
             </div>
 
+            <!-- Overview -->
             <div v-if="movie.overview" class="overview-text">
               {{ movie.overview}}
             </div>
@@ -151,6 +155,7 @@
             </button>
           </div>
         </div>
+
         <!-- Recommendations Section -->
         <div v-if="allRecommendations.length > 0" class="recommendations-section">
           <h2 class="section-title">You May Also Like</h2>
@@ -174,10 +179,10 @@
             <span>Loading recommendations...</span>
           </div>
         </div>
+
         <!-- Reviews Section -->
         <div v-if="reviews.length > 0" class="reviews-section">
           <h2 class="section-title">Reviews</h2>
-
           <div class="reviews-list">
             <div v-for="review in displayedReviews" :key="review.id" class="review-card">
               <div class="review-header">
@@ -196,10 +201,7 @@
                   </div>
                 </div>
                 <div v-if="review.author_details?.rating" class="review-rating">
-                  <svg class="rating-star" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
+                  <font-awesome-icon icon="star" style="color: #d4af37;"/>
                   <span class="rating-value">{{ review.author_details.rating }}/10</span>
                 </div>
               </div>
@@ -251,10 +253,8 @@ export default {
       error: null,
       allRecommendations: [],
       loadingRecommendations: false,
-      recommendationsPage: 0, // current page index
+      recommendationsPage: 0,
       pageSize: 7,
-      canScrollLeft: false,
-      canScrollRight: false,
       showAllCast: false,
       showAllCrew: false,
       reviews: [],
@@ -346,7 +346,6 @@ export default {
     },
 
   watch: {
-    // Watch for changes to the id prop and re-fetch data
     id(newId) {
       if (newId) {
         this.resetState();
@@ -367,7 +366,6 @@ export default {
     this.showAllCrew = false;
     this.loading = true;
     this.error = null;
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     async fetchMovieDetails() {
@@ -425,7 +423,6 @@ export default {
 
     getAvatarUrl(avatarPath) {
       if (!avatarPath) return '';
-      // TMDB sometimes returns gravatar URLs starting with /https://
       if (avatarPath.startsWith('/https://') || avatarPath.startsWith('/http://')) {
         return avatarPath.substring(1);
       }
@@ -447,22 +444,24 @@ export default {
         name: 'MovieDetail',
         params: { id: movie.id }
       });
-      // Scroll to top when navigating
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
+    // Load next batch of recommendations
     nextRecommendations() {
      const maxPage = Math.floor((this.allRecommendations.length - 1) / this.pageSize);
       if (this.recommendationsPage < maxPage)
         this.recommendationsPage++;
     },
 
+    // Load previous batch of recommendations
     prevRecommendations() {
       if (this.recommendationsPage > 0) {
         this.recommendationsPage--;
       }
     },
 
+    // Utility Functions
     formatRuntime(minutes) {
       if (!minutes) return '';
       const hours = Math.floor(minutes / 60);
@@ -1215,193 +1214,5 @@ export default {
     gap: 1rem;
     padding: 2rem;
     color: var(--text-gothic-secondary);
-  }
-
-
-  @media (max-width: 1024px) {
-    .movie-header {
-      grid-template-columns: 250px 1fr;
-      gap: 2rem;
-    }
-
-    .poster-container {
-      width: 250px;
-    }
-
-    .movie-title {
-      font-size: 2.5rem;
-    }
-
-    .details-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .content-container {
-      padding: 0 1rem;
-      margin-top: -150px;
-    }
-
-    .movie-header {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-
-    .poster-section {
-      order: -1;
-    }
-
-    .poster-container {
-      width: 200px;
-    }
-
-    .movie-title {
-      font-size: 2rem;
-      text-align: center;
-    }
-
-    .title-section {
-      text-align: center;
-    }
-
-    .movie-meta {
-      justify-content: center;
-    }
-
-    .genres-container {
-      justify-content: center;
-    }
-
-    .cast-grid {
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    }
-
-    .details-grid {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
-    }
-
-    .recommendations-scroll {
-      padding: 0 2rem;
-    }
-
-    .recommendation-card {
-      width: 160px;
-    }
-
-    .scroll-btn {
-      width: 40px;
-      height: 40px;
-    }
-
-    .scroll-btn svg {
-      width: 20px;
-      height: 20px;
-    }
-
-    .cast-grid,
-    .crew-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-      row-gap: 1.5rem;
-    }
-
-    .review-header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .review-rating {
-      align-self: flex-start;
-    }
-
-    .author-avatar {
-      width: 45px;
-      height: 45px;
-    }
-
-    .author-name {
-      font-size: 1rem;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .backdrop-section {
-      height: 250px;
-    }
-
-    .content-container {
-      margin-top: -100px;
-    }
-
-    .movie-title {
-      font-size: 1.8rem;
-    }
-
-    .poster-container {
-      width: 180px;
-    }
-
-    .detail-card {
-      padding: 1rem;
-    }
-
-    .cast-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .recommendations-scroll {
-      padding: 0 1rem;
-    }
-
-    .recommendation-card {
-      width: 140px;
-    }
-
-    .section-title {
-      font-size: 1.6rem;
-    }
-
-    .cast-grid,
-    .crew-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.75rem;
-      row-gap: 1.25rem;
-    }
-
-    .reviews-section {
-      margin-top: 3rem;
-    }
-
-    .review-card {
-      padding: 1rem;
-    }
-
-    .author-avatar {
-      width: 40px;
-      height: 40px;
-    }
-
-    .author-name {
-      font-size: 0.95rem;
-    }
-
-    .review-date {
-      font-size: 0.8rem;
-    }
-
-    .review-text {
-      font-size: 0.9rem;
-      line-height: 1.6;
-    }
-
-    .review-rating {
-      padding: 0.4rem 0.75rem;
-    }
-
-    .rating-value {
-      font-size: 0.85rem;
-    }
   }
 </style>

@@ -1,276 +1,300 @@
 <template>
   <Navbar />
-  <div class="tvshow-detail-page">
+  <div class="tv-detail-page">
+
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">
       <div class="loading-spinner"></div>
-      <span class="loading-text">Loading TV show details...</span>
+      <span class="loading-text">Loading show details...</span>
     </div>
 
     <!-- Error State -->
     <div v-else-if="error" class="error-container">
       <div class="error-card">
-        <h3 class="error-title">Error Loading TV Show</h3>
+        <h3 class="error-title">Error Loading Show</h3>
         <p class="error-message">{{ error }}</p>
-        <button @click="$router.go(-1)" class="back-button">Go Back</button>
+        <button @click="$router.go(-1)" class="back-button">
+          Go Back
+        </button>
       </div>
     </div>
 
-    <!-- TV Show Details -->
-    <div v-else-if="tvShow" class="tvshow-content">
+    <!-- Show Details -->
+    <div v-else-if="show" class="show-content">
       <!-- Backdrop with overlay -->
       <div class="backdrop-section">
-        <div
-          v-if="tvShow.backdrop_path"
-          class="backdrop-image"
-          :style="{ backgroundImage: `url(https://image.tmdb.org/t/p/original${tvShow.backdrop_path})` }"
-        ></div>
+        <div v-if="show.backdrop_path" class="backdrop-image"
+          :style="{ backgroundImage: `url(https://image.tmdb.org/t/p/original${show.backdrop_path})` }"></div>
         <div class="backdrop-overlay"></div>
       </div>
 
       <!-- Main Content Container -->
       <div class="content-container">
-        <div class="tvshow-header">
+        <div class="show-header">
           <!-- Poster Section -->
           <div class="poster-section">
             <div class="poster-container">
-              <img
-                v-if="tvShow.poster_path"
-                :src="`https://image.tmdb.org/t/p/w500${tvShow.poster_path}`"
-                :alt="tvShow.name"
-                class="tvshow-poster"
-              />
+              <img v-if="show.poster_path" :src="`https://image.tmdb.org/t/p/w500${show.poster_path}`" :alt="show.name"
+                class="show-poster" />
               <div v-else class="poster-placeholder">
                 <svg class="poster-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                  <path fill-rule="evenodd"
+                    d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                    clip-rule="evenodd" />
                 </svg>
               </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-              <button class="btn btn-primary">
-                <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Add to Watchlist
-              </button>
-              <button class="btn btn-secondary">
-                <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Mark as Watched
-              </button>
-              <button class="btn btn-secondary">
-                <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-                Add to Favorites
-              </button>
             </div>
           </div>
 
           <!-- Title and Basic Info -->
           <div class="title-section">
-            <h1 class="tvshow-title">{{ tvShow.name }}</h1>
+            <h1 class="show-title">{{ show.name }}</h1>
+            <div class="show-meta">
+              <span v-if="show.first_air_date" class="meta-item">
+                {{ new Date(show.first_air_date).getFullYear() }}{{ show.last_air_date && !show.in_production ? ' - ' +
+                  new Date(show.last_air_date).getFullYear() : '' }}
+              </span>
+              <span v-if="show.number_of_seasons" class="meta-item">
+                {{ show.number_of_seasons }} {{ show.number_of_seasons === 1 ? 'Season' : 'Seasons' }}
+              </span>
+              <span v-if="show.number_of_episodes" class="meta-item">
+                {{ show.number_of_episodes }} Episodes
+              </span>
 
-            <div class="tvshow-meta">
-              <span v-if="tvShow.first_air_date" class="meta-item">
-                {{ new Date(tvShow.first_air_date).getFullYear() }}{{ tvShow.status === 'Ended' && tvShow.last_air_date ? ` - ${new Date(tvShow.last_air_date).getFullYear()}` : ' - Present' }}
-              </span>
-              <span v-if="tvShow.number_of_seasons" class="meta-item">
-                {{ tvShow.number_of_seasons }} Season{{ tvShow.number_of_seasons > 1 ? 's' : '' }}
-              </span>
-              <span v-if="tvShow.episode_run_time && tvShow.episode_run_time.length > 0" class="meta-item">
-                {{ tvShow.episode_run_time[0] }}min
-              </span>
-              <div v-if="tvShow.vote_average > 0" class="rating-container">
-                <svg class="single-star" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <span class="rating-text">{{ tvShow.vote_average.toFixed(1) }}<span class="rating-scale">/10</span></span>
-                <span class="vote-count">({{ formatVoteCount(tvShow.vote_count) }} votes)</span>
+              <!-- User Score Donut -->
+              <div v-if="show.vote_average > 0" class="donut-container">
+                <span class="user-score">User score</span>
+                <vc-donut :background="'#6a4c7c'" :sections="sections" :size="100" :unit="px" :thickness="40"
+                  :animation="true" :auto-adjust-text-size :suppress-validation-warnings="false">
+                  <h1> {{ show.vote_average.toFixed(1) }}</h1>
+                </vc-donut>
+                <span class="vote-count">({{ formatVoteCount(show.vote_count) }} votes)</span>
               </div>
             </div>
 
             <!-- Genres -->
-            <div v-if="tvShow.genres && tvShow.genres.length > 0" class="genres-container">
-              <span v-for="genre in tvShow.genres" :key="genre.id" class="genre-tag">
+            <div v-if="show.genres && show.genres.length > 0" class="genres-container">
+              <span v-for="genre in show.genres" :key="genre.id" class="genre-tag">
                 {{ genre.name }}
               </span>
             </div>
 
-            <!-- Tagline -->
-            <div v-if="tvShow.tagline" class="tagline">
-              "{{ tvShow.tagline }}"
+            <!-- Status -->
+            <div class="status-info">
+              <span class="status-badge" :class="show.in_production ? 'status-active' : 'status-ended'">
+                {{ show.in_production ? 'Ongoing' : 'Ended' }}
+              </span>
+              <span v-if="show.last_air_date" class="last-aired">
+                Last aired: {{ formatDate(show.last_air_date) }}
+              </span>
+            </div>
+
+            <!-- Overview -->
+            <div v-if="show.overview" class="overview-text">
+              {{ show.overview }}
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+              <button class="btn btn-secondary">
+                <font-awesome-icon icon="plus" />
+                Add to Watchlist
+              </button>
+              <button class="btn btn-secondary">
+                <font-awesome-icon icon="check" />
+                Mark as Watched
+              </button>
+              <button class="btn btn-secondary">
+                <font-awesome-icon icon="heart" />
+                Add to Favorites
+              </button>
+              <button class="btn btn-secondary">
+                <font-awesome-icon icon="star" />
+                Rate this show
+              </button>
             </div>
           </div>
         </div>
 
         <!-- Details Grid -->
         <div class="details-grid">
-          <!-- Overview Section -->
-          <div class="detail-card overview-card">
-            <h3 class="card-title">Overview</h3>
-            <p class="overview-text">{{ tvShow.overview || 'No overview available.' }}</p>
-          </div>
-
           <!-- Cast Section -->
           <div v-if="cast.length > 0" class="detail-card cast-card">
             <h3 class="card-title">Cast</h3>
             <div class="cast-grid">
-              <div v-for="actor in cast.slice(0, 8)" :key="actor.id" class="cast-member">
+              <div v-for="actor in displayedCast" :key="actor.id" class="cast-member">
                 <div class="cast-photo">
-                  <img
-                    v-if="actor.profile_path"
-                    :src="`https://image.tmdb.org/t/p/w185${actor.profile_path}`"
-                    :alt="actor.name"
-                    class="cast-image"
-                  />
+                  <img v-if="actor.profile_path" :src="`https://image.tmdb.org/t/p/w185${actor.profile_path}`"
+                    :alt="actor.name" class="cast-image" />
                   <div v-else class="cast-placeholder">
-                    <svg class="cast-icon" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                    </svg>
+                    <font-awesome-icon icon="user" style="width: 75px; height: 75px;" />
                   </div>
                 </div>
                 <div class="cast-info">
                   <p class="cast-name">{{ actor.name }}</p>
-                  <p class="cast-character">{{ actor.character }}</p>
+                  <p class="cast-character">{{ actor.roles[0].character }}</p>
+                  <p class="cast-number-of-episodes">{{ actor.total_episode_count }} episodes</p>
                 </div>
               </div>
             </div>
+            <button v-if="cast.length > 8" @click="toggleCastExpanded" class="show-more-btn">
+              {{ showAllCast ? 'Show Less' : `Show All ${cast.length} Cast Members` }}
+            </button>
           </div>
 
           <!-- Crew Section -->
           <div class="detail-card crew-card">
-            <h3 class="card-title">Key Crew</h3>
-            <div class="crew-list">
-              <div v-if="creators.length > 0" class="crew-item">
-                <span class="crew-role">Creator{{ creators.length > 1 ? 's' : '' }}:</span>
-                <span class="crew-name">{{ creators.map(c => c.name).join(', ') }}</span>
-              </div>
-              <div v-if="producers.length > 0" class="crew-item">
-                <span class="crew-role">Executive Producer{{ producers.length > 1 ? 's' : '' }}:</span>
-                <span class="crew-name">{{ producers.slice(0, 3).map(p => p.name).join(', ') }}</span>
-              </div>
-            </div>
-          </div>
 
-          <!-- Technical Details -->
-          <div class="detail-card technical-card">
-            <h3 class="card-title">Technical Details</h3>
-            <div class="technical-list">
-              <div v-if="tvShow.first_air_date" class="technical-item">
-                <span class="tech-label">First Air Date:</span>
-                <span class="tech-value">{{ formatDate(tvShow.first_air_date) }}</span>
+            <h3 class="card-title">Key Crew</h3>
+
+            <!-- Priority jobs in the correct order -->
+            <div v-for="job in jobPriority" :key="job">
+
+              <div v-if="groupedCrew[job] && groupedCrew[job].length > 0" class="crew-block">
+
+                <h4 class="crew-job-title">{{ job }}</h4>
+
+                <div class="crew-grid">
+                  <div v-for="member in groupedCrew[job]" :key="`${member.id}-${job}`" class="crew-member">
+                    <div class="crew-photo">
+                      <img v-if="member.profile_path" :src="`https://image.tmdb.org/t/p/w185${member.profile_path}`"
+                        :alt="member.name" class="crew-image" />
+                      <div v-else class="crew-placeholder">
+                        <font-awesome-icon icon="user" style="width: 75px; height: 75px;" />
+                      </div>
+                    </div>
+
+                    <div class="crew-info">
+                      <p class="crew-name">{{ member.name }}</p>
+                      <p class="crew-number-of-episodes" v-if="member.total_episode_count">{{ member.total_episode_count }} episodes</p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
-              <div v-if="tvShow.status" class="technical-item">
-                <span class="tech-label">Status:</span>
-                <span class="tech-value">{{ tvShow.status }}</span>
-              </div>
-              <div v-if="tvShow.number_of_episodes" class="technical-item">
-                <span class="tech-label">Total Episodes:</span>
-                <span class="tech-value">{{ tvShow.number_of_episodes }}</span>
-              </div>
-              <div v-if="tvShow.networks && tvShow.networks.length > 0" class="technical-item">
-                <span class="tech-label">Network:</span>
-                <span class="tech-value">{{ tvShow.networks.map(n => n.name).join(', ') }}</span>
-              </div>
-              <div v-if="tvShow.production_companies && tvShow.production_companies.length > 0" class="technical-item">
-                <span class="tech-label">Production:</span>
-                <span class="tech-value">{{ tvShow.production_companies.slice(0, 2).map(c => c.name).join(', ') }}</span>
+
+            </div>
+
+            <!-- Other crew section -->
+            <div class="crew-block other-crew">
+
+              <button class="show-more-btn" @click="showOtherCrew = !showOtherCrew">
+                {{ showOtherCrew ? 'Show Less' : `Show ${otherCrew.length} Other Crew` }}
+              </button>
+
+              <div v-if="showOtherCrew" class="crew-grid">
+                <div v-for="member in otherCrew" :key="`${member.id}-other`" class="crew-member">
+                  <div class="crew-photo">
+                    <img v-if="member.profile_path" :src="`https://image.tmdb.org/t/p/w185${member.profile_path}`"
+                      :alt="member.name" class="crew-image" />
+                    <div v-else class="crew-placeholder">
+                      <font-awesome-icon icon="user" style="width: 75px; height: 75px;" />
+                    </div>
+                  </div>
+
+                  <div class="crew-info">
+                    <p class="crew-name">{{ member.name }}</p>
+                    <p class="crew-job">{{ member.job }}</p>
+                    <p class= "crew-number-of-episodes" v-if="member.episodeCount">{{ member.episodeCount }} episodes</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Seasons Section -->
-        <div v-if="tvShow.seasons && tvShow.seasons.length > 0" class="seasons-section">
-          <h2 class="section-title">Seasons</h2>
+        <div class="seasons-section" v-if="show && show.seasons && show.seasons.length">
+          <div v-for="season in show.seasons" :key="season.id" class="season-card">
+            <div class="season-header" @click="toggleSeason(season.id)">
+              <h3 class="season-title">{{ season.name }}</h3>
+              <img v-if="season.poster_path" class="season-poster" :src="getImageUrl(season.poster_path)"
+                :alt="season.name" />
+            </div>
 
-          <div class="seasons-list">
-            <div
-              v-for="season in tvShow.seasons.filter(s => s.season_number > 0)"
-              :key="season.id"
-              class="season-card"
-              @click="toggleSeason(season.season_number)"
-            >
-              <div class="season-header">
-                <img
-                  v-if="season.poster_path"
-                  :src="`https://image.tmdb.org/t/p/w185${season.poster_path}`"
-                  :alt="season.name"
-                  class="season-poster"
-                />
-                <div v-else class="season-poster-placeholder">
-                  <svg class="season-icon" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                  </svg>
-                </div>
+            <transition name="expand">
+              <div v-if="expandedSeasons.includes(season.id)" class="season-details">
+                <p class="season-overview" v-if="season.overview">
+                  {{ season.overview }}
+                </p>
 
-                <div class="season-info">
-                  <h3 class="season-title">{{ season.name }}</h3>
-                  <p class="season-meta">
-                    {{ season.episode_count }} Episodes
-                    <span v-if="season.air_date"> • {{ new Date(season.air_date).getFullYear() }}</span>
-                  </p>
-                  <p v-if="season.overview" class="season-overview">{{ season.overview }}</p>
-                </div>
-
-                <button class="expand-btn" :class="{ expanded: expandedSeasons.includes(season.season_number) }">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
+                <ul v-if="season.episodes && season.episodes.length" class="episode-list">
+                  <li v-for="ep in season.episodes" :key="ep.id" class="episode-item">
+                    <span class="episode-title">{{ ep.episode_number }}. {{ ep.name }}</span>
+                    <span v-if="ep.runtime" class="episode-runtime">{{ ep.runtime }} min</span>
+                  </li>
+                </ul>
               </div>
+            </transition>
+          </div>
+        </div>
 
-              <!-- Episodes List -->
-              <div v-if="expandedSeasons.includes(season.season_number)" class="episodes-container">
-                <div v-if="loadingSeasons.includes(season.season_number)" class="episodes-loading">
-                  <div class="loading-spinner-small"></div>
-                  <span>Loading episodes...</span>
-                </div>
+        <!-- Recommendations Section -->
+        <div v-if="allRecommendations.length > 0" class="recommendations-section">
+          <h2 class="section-title">You May Also Like</h2>
+          <div class="recommendations-scroll">
+            <button class="scroll-btn scroll-left" @click="prevRecommendations" v-show="canScrollLeft">
+              <font-awesome-icon icon="chevron-left" />
+            </button>
 
-                <div v-else-if="seasonEpisodes[season.season_number]" class="episodes-list">
-                  <div
-                    v-for="episode in seasonEpisodes[season.season_number]"
-                    :key="episode.id"
-                    class="episode-item"
-                  >
-                    <img
-                      v-if="episode.still_path"
-                      :src="`https://image.tmdb.org/t/p/w300${episode.still_path}`"
-                      :alt="episode.name"
-                      class="episode-thumbnail"
-                    />
-                    <div v-else class="episode-thumbnail-placeholder">
-                      <svg fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                      </svg>
-                    </div>
+            <div class="recommendations-container" ref="recommendationsContainer">
+              <TVShowsCard v-for="rec in visibleRecommendations" :key="rec.id" :show="rec" :show-placeholder="false"
+                @click="handleRecommendationClick" class="recommendation-card" />
+            </div>
 
-                    <div class="episode-details">
-                      <div class="episode-header">
-                        <h4 class="episode-title">
-                          {{ episode.episode_number }}. {{ episode.name }}
-                        </h4>
-                        <span v-if="episode.runtime" class="episode-runtime">{{ episode.runtime }}min</span>
-                      </div>
-                      <p v-if="episode.air_date" class="episode-date">
-                        {{ formatDate(episode.air_date) }}
-                      </p>
-                      <p v-if="episode.overview" class="episode-overview">{{ episode.overview }}</p>
-                      <div v-if="episode.vote_average > 0" class="episode-rating">
-                        <svg class="star-small" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        {{ episode.vote_average.toFixed(1) }}
-                      </div>
+            <button class="scroll-btn scroll-right" @click="nextRecommendations" v-show="canScrollRight">
+              <font-awesome-icon icon="chevron-right" />
+            </button>
+          </div>
+
+          <div v-if="loadingRecommendations" class="recommendations-loading">
+            <div class="loading-spinner-small"></div>
+            <span>Loading recommendations...</span>
+          </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div v-if="reviews.length > 0" class="reviews-section">
+          <h2 class="section-title">Reviews</h2>
+          <div class="reviews-list">
+            <div v-for="review in displayedReviews" :key="review.id" class="review-card">
+              <div class="review-header">
+                <div class="review-author">
+                  <div class="author-avatar">
+                    <img v-if="review.author_details?.avatar_path"
+                      :src="getAvatarUrl(review.author_details.avatar_path)" :alt="review.author"
+                      class="avatar-image" />
+                    <div v-else class="avatar-placeholder">
+                      {{ review.author.charAt(0).toUpperCase() }}
                     </div>
                   </div>
+                  <div class="author-info">
+                    <p class="author-name">{{ review.author }}</p>
+                    <p class="review-date">{{ formatReviewDate(review.created_at) }}</p>
+                  </div>
+                </div>
+                <div v-if="review.author_details?.rating" class="review-rating">
+                  <font-awesome-icon icon="star" style="color: #d4af37;" />
+                  <span class="rating-value">{{ review.author_details.rating }}/10</span>
                 </div>
               </div>
+
+              <div class="review-content">
+                <p :class="['review-text', { expanded: expandedReviews.includes(review.id) }]">
+                  {{ review.content }}
+                </p>
+                <button v-if="review.content.length > 400" @click="toggleReview(review.id)" class="read-more-btn">
+                  {{ expandedReviews.includes(review.id) ? 'Read Less' : 'Read More' }}
+                </button>
+              </div>
             </div>
+          </div>
+          <button v-if="reviews.length > 3" @click="toggleReviewsExpanded" class="show-more-btn">
+            {{ showAllReviews ? 'Show Less' : `Show All ${reviews.length} Reviews` }}
+          </button>
+          <div v-if="loadingReviews" class="reviews-loading">
+            <div class="loading-spinner-small"></div>
+            <span>Loading reviews...</span>
           </div>
         </div>
       </div>
@@ -281,10 +305,12 @@
 <script>
 import { tmdbService } from '@/services/tmdb'
 import Navbar from '@/components/Navbar.vue'
-
+import { VcDonut } from 'vue-css-donut-chart';
 export default {
   name: 'TVShowDetail',
-  components: { Navbar },
+  components: {
+    VcDonut
+  },
   props: {
     id: {
       type: String,
@@ -293,74 +319,241 @@ export default {
   },
   data() {
     return {
-      tvShow: null,
+      show: null,
       loading: true,
       error: null,
+      allRecommendations: [],
+      loadingRecommendations: false,
+      recommendationsPage: 0,
+      pageSize: 7,
+      showAllCast: false,
+      showAllCrew: false,
+      groupedCrew: {},
+      otherCrew: [],
+      showOtherCrew: false,
+      show: null,
       expandedSeasons: [],
+      loadingSeasons: [],
       seasonEpisodes: {},
-      loadingSeasons: []
+      reviews: [],
+      loadingReviews: false,
+      showAllReviews: false,
+      expandedReviews: [],
+      jobPriority: [
+        "Creator",
+        "Executive Producer",
+        "Producer",
+        "Writer",
+      ],
     }
   },
   computed: {
-    creators() {
-      if (!this.tvShow || !this.tvShow.created_by) return [];
-      return this.tvShow.created_by;
-    },
-    producers() {
-      if (!this.tvShow || !this.tvShow.credits) return [];
-      return this.tvShow.credits.crew.filter(person =>
-        person.job === 'Producer' ||
-        person.job === 'Executive Producer'
-      );
+    sections() {
+      const percentage = (this.show.vote_average / 10) * 100;
+      return [
+        {
+          value: percentage,
+          color: '#d4af37'
+        },
+        {
+          value: 100 - percentage,
+          color: '#4a4a4a'
+        }
+      ];
     },
     cast() {
-      if (!this.tvShow || !this.tvShow.credits) return [];
-      return this.tvShow.credits.cast || [];
+      if (!this.show || !this.show.credits) return [];
+      return this.show.credits.cast || [];
+    },
+    displayedCast() {
+      return this.showAllCast ? this.cast : this.cast.slice(0, 10);
+    },
+
+    displayedSeasons() {
+      return this.showAllSeasons ? this.show.seasons : this.show.seasons;
+    },
+    displayedReviews() {
+      return this.showAllReviews ? this.reviews : this.reviews.slice(0, 3);
+    },
+    visibleRecommendations() {
+      const arr = this.allRecommendations || [];
+      const start = this.recommendationsPage * this.pageSize;
+      return arr.slice(start, start + this.pageSize);
+    },
+    canScrollLeft() {
+      return this.recommendationsPage > 0;
+    },
+    canScrollRight() {
+      return (this.recommendationsPage + 1) * this.pageSize < this.allRecommendations.length;
+    }
+  },
+
+  watch: {
+    id(newId) {
+      if (newId) {
+        this.resetState();
+        this.fetchShowDetails();
+        this.fetchRecommendations();
+        this.fetchReviews();
+      }
     }
   },
   async mounted() {
-    await this.fetchTVShowDetails();
+    await this.fetchShowDetails();
+    await this.fetchRecommendations();
+    await this.fetchReviews();
   },
   methods: {
-    async fetchTVShowDetails() {
+    resetState() {
+      this.showAllCast = false;
+      this.showAllCrew = false;
+      this.showAllSeasons = false;
+      this.loading = true;
+      this.error = null;
+      this.seasonEpisodes = {};
+      this.loadingSeasons = [];
+      this.expandedSeasons = [];
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    async fetchShowDetails() {
       try {
-        const tvData = await tmdbService.getCompleteTVShowDetails(this.id);
-        this.tvShow = tvData;
+        const showData = await tmdbService.getCompleteTVShowDetails(this.id);
+        this.show = showData;
+        this.processCrew();
+        console.log(this.show);
+        const season1 = this.show.seasons?.find(s => s.season_number === 1)
+        if (season1) {
+          this.expandedSeasons = [season1.id]
+          this.fetchSeasonEpisodes(season1);
+        }
+        console.log('Fetched show details:', this.show);
       } catch (err) {
-        this.error = err.message || 'An error occurred while loading TV show details';
-        console.error('TV show detail error:', err);
+        this.error = err.message || 'An error occurred while loading show details';
+        console.error('Show detail error:', err);
       } finally {
         this.loading = false;
       }
     },
-
-    async toggleSeason(seasonNumber) {
-      const index = this.expandedSeasons.indexOf(seasonNumber);
-
-      if (index > -1) {
-        this.expandedSeasons.splice(index, 1);
-      } else {
-        this.expandedSeasons.push(seasonNumber);
-
-        if (!this.seasonEpisodes[seasonNumber]) {
-          await this.loadSeasonEpisodes(seasonNumber);
-        }
+    async fetchRecommendations() {
+      this.loadingRecommendations = true;
+      try {
+        const data = await tmdbService.getTvShowRecommendations(this.id);
+        this.allRecommendations = data.results;
+        this.recommendationsPage = 0;
+        console.log('Recommendations set to:', this.allRecommendations);
+      } catch (error) {
+        console.error('Error loading recommendations:', error);
+        this.allRecommendations = [];
+      } finally {
+        this.loadingRecommendations = false;
       }
     },
 
-    async loadSeasonEpisodes(seasonNumber) {
-      this.loadingSeasons.push(seasonNumber);
+    async fetchReviews() {
+      this.loadingReviews = true;
+      try {
+        const data = await tmdbService.getTvShowsReviews(this.id);
+        this.reviews = data.results || [];
+      } catch (error) {
+        console.error('Error loading reviews:', error);
+        this.reviews = [];
+      } finally {
+        this.loadingReviews = false;
+      }
+    },
+
+    async fetchSeasonEpisodes(seasonNumber) {
+      if (!this.loadingSeasons.includes(seasonNumber)) {
+        this.loadingSeasons.push(seasonNumber);
+      }
 
       try {
-        const seasonData = await tmdbService.getTVSeasonDetails(this.id, seasonNumber);
-        this.seasonEpisodes[seasonNumber] = seasonData.episodes || [];
+        const data = await tmdbService.getTVSeasonDetails(this.id, seasonNumber);
+        this.seasonEpisodes[seasonNumber] = data.episodes
       } catch (error) {
-        console.error(`Error loading season ${seasonNumber}:`, error);
+        console.error(`Error loading episodes for season ${seasonNumber}:`, error);
       } finally {
         const index = this.loadingSeasons.indexOf(seasonNumber);
         if (index > -1) {
           this.loadingSeasons.splice(index, 1);
         }
+      }
+    },
+
+    async fetchEpisodeDetails(seasonNumber, episodeNumber) {
+      try {
+        const data = await tmdbService.getTVSeasonEpisodeDetails(this.id, seasonNumber, episodeNumber);
+        season.episodes = data.episodes || []
+        console.log(season.episodes);
+        return data;
+      } catch (error) {
+        console.error(`Error loading details for S${seasonNumber}E${episodeNumber}:`, error);
+        return null;
+      }
+    },
+
+    async toggleSeasonEpisodes(seasonNumber) {
+      const index = this.expandedSeasons.indexOf(seasonNumber);
+      if (index > -1) {
+        // Collapse
+        this.expandedSeasons.splice(index, 1);
+      } else {
+        // Expand
+        this.expandedSeasons.push(seasonNumber);
+        // Fetch episodes if not already loaded
+        if (!this.seasonEpisodes[seasonNumber]) {
+          await this.fetchSeasonEpisodes(seasonNumber);
+        }
+      }
+    },
+
+    toggleReviewsExpanded() {
+      this.showAllReviews = !this.showAllReviews;
+    },
+
+    toggleReview(reviewId) {
+      const index = this.expandedReviews.indexOf(reviewId);
+      if (index > -1) {
+        this.expandedReviews.splice(index, 1);
+      } else {
+        this.expandedReviews.push(reviewId);
+      }
+    },
+
+    getAvatarUrl(avatarPath) {
+      if (!avatarPath) return '';
+      if (avatarPath.startsWith('/https://') || avatarPath.startsWith('/http://')) {
+        return avatarPath.substring(1);
+      }
+      return `https://image.tmdb.org/t/p/w185${avatarPath}`;
+    },
+
+    formatReviewDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    },
+
+    handleRecommendationClick(show) {
+      this.$router.push({
+        name: 'TVShowDetail',
+        params: { id: show.id }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    nextRecommendations() {
+      const maxPage = Math.floor((this.allRecommendations.length - 1) / this.pageSize);
+      if (this.recommendationsPage < maxPage)
+        this.recommendationsPage++;
+    },
+
+    prevRecommendations() {
+      if (this.recommendationsPage > 0) {
+        this.recommendationsPage--;
       }
     },
 
@@ -379,20 +572,87 @@ export default {
         return (count / 1000).toFixed(1) + 'K';
       }
       return count.toString();
-    }
+    },
+
+    toggleCastExpanded() {
+      this.showAllCast = !this.showAllCast;
+    },
+
+    toggleCrewExpanded() {
+      this.showAllCrew = !this.showAllCrew;
+    },
+
+    async toggleSeason(id) {
+      const index = this.expandedSeasons.indexOf(id)
+      if (index === -1) {
+        this.expandedSeasons.push(id)
+
+        // find the selected season
+        const season = this.show.seasons.find(s => s.id === id)
+        // only fetch if not already loaded
+        if (season && !season.episodes) {
+          await this.fetchEpisodeDetails(season)
+        }
+      } else {
+        this.expandedSeasons.splice(index, 1)
+      }
+    },
+    getImageUrl(path) {
+      return path ? `https://image.tmdb.org/t/p/w300${path}` : '/placeholder.jpg'
+    },
+    processCrew() {
+      const priority = this.jobPriority;
+      const grouped = {};
+      const others = [];
+
+      this.show.credits.crew.forEach(member => {
+        const jobs = Array.isArray(member.jobs) ? member.jobs : [];
+
+        if (!jobs.length) return;
+        const matchingJobs = jobs.filter(j => priority.includes(j.job));
+        if (matchingJobs.length > 0) {
+          matchingJobs.forEach(jobObj => {
+            const jobName = jobObj.job;
+
+            if (!grouped[jobName]) {
+              grouped[jobName] = [];
+            }
+
+            grouped[jobName].push({
+              ...member,
+              job: jobName,
+              episodeCount: jobObj.episode_count || 0
+            });
+          });
+        }
+
+        else {
+          // No priority job matched, add to others
+          const j = jobs[0];
+          others.push({
+            ...member,
+            job: j.job,
+            episodeCount: j.episode_count || 0
+          });
+        }
+      });
+
+      this.groupedCrew = grouped;
+      this.otherCrew = others;
+    },
   }
 }
 </script>
 
 <style scoped>
-/* Base styles - similar to MovieDetail */
-.tvshow-detail-page {
+.tv-detail-page {
   min-height: 100vh;
   background: var(--gothic-black);
   color: var(--text-gothic-primary);
 }
 
-.loading-container, .error-container {
+.loading-container,
+.error-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -416,8 +676,13 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .error-card {
@@ -456,13 +721,13 @@ export default {
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
 }
 
-.tvshow-content {
+.show-content {
   position: relative;
 }
 
 .backdrop-section {
   position: relative;
-  height: 400px;
+  height: 500px;
   overflow: hidden;
 }
 
@@ -473,7 +738,7 @@ export default {
   right: 0;
   bottom: 0;
   background-size: cover;
-  background-position: center;
+  background-position: center top;
   filter: blur(2px);
   opacity: 0.3;
 }
@@ -489,17 +754,18 @@ export default {
 
 .content-container {
   position: relative;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 0 2rem;
-  margin-top: -200px;
+  margin-top: -400px;
   z-index: 10;
 }
 
-.tvshow-header {
+.show-header {
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 3rem;
+  align-items: start;
   margin-bottom: 3rem;
 }
 
@@ -511,14 +777,14 @@ export default {
 
 .poster-container {
   width: 300px;
-  height: 450px;
+  aspect-ratio: calc(2 / 3);
   border-radius: 15px;
   overflow: hidden;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
   margin-bottom: 1.5rem;
 }
 
-.tvshow-poster {
+.show-poster {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -541,8 +807,9 @@ export default {
 
 .action-buttons {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.75rem;
+  padding-top: 2vh;
   width: 100%;
 }
 
@@ -557,6 +824,7 @@ export default {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  text-decoration: none;
 }
 
 .btn-icon {
@@ -589,22 +857,21 @@ export default {
 .title-section {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  justify-content: flex-start;
+  text-align: left;
+  max-width: 1000px;
 }
 
-.tvshow-title {
+.show-title {
   font-size: 3rem;
   font-weight: bold;
   margin-bottom: 1rem;
-  background: linear-gradient(45deg, #667eea, #764ba2);
-  background-clip: text;
+  color: var(--text-gothic-primary);
 }
 
-.tvshow-meta {
+.show-meta {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 2rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
@@ -616,63 +883,76 @@ export default {
   font-weight: 500;
 }
 
-.rating-container {
+.donut-container {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
-.single-star {
-  width: 14px;
-  height: 14px;
-  color: #ffd700;
-}
-
-.rating-text {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-gothic-primary);
-}
-
-.rating-scale {
-  font-size: 0.7rem;
-  font-weight: normal;
-  color: var
-}
-.vote-count {
+.vote-count,
+.user-score {
   font-size: 0.9rem;
   color: var(--text-gothic-secondary);
 }
 
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.status-active {
+  background: var(--gothic-success);
+  color: var(--text-gothic-primary);
+}
+
+.status-ended {
+  background: var(--gothic-crimson);
+  color: var(--text-gothic-primary);
+}
+
+.last-aired {
+  color: var(--text-gothic-secondary);
+  font-size: 0.9rem;
+}
+
 .genres-container {
   display: flex;
-  justify-content: center;
   gap: 0.75rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
 }
 
 .genre-tag {
-  background: rgba(102, 126, 234, 0.2);
-  color: #667eea;
+  background: var(--gothic-amethyst);
+  color: var(--text-gothic-primary);
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 500;
+  opacity: 0.9;
 }
 
-.tagline {
-  font-size: 1.2rem;
-  font-style: italic;
-  color: var(--text-gothic-accent);
-  text-align: center;
+.overview-text {
+  font-size: 1rem;
+  color: var(--text-gothic-primary);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
 }
 
 .details-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 2rem;
-  margin-bottom: 3rem;
 }
 
 .detail-card {
@@ -689,43 +969,35 @@ export default {
   color: var(--text-gothic-accent);
   border-bottom: 2px solid rgba(102, 126, 234, 0.3);
   padding-bottom: 0.5rem;
-}
-
-.overview-card {
-  grid-column: 1 / -1;
-}
-
-.overview-text {
-  line-height: 1.7;
-  color: var(--text-gothic-primary);
-  font-size: 1.1rem;
-}
-
-.cast-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-}
-
-.cast-member {
   text-align: center;
 }
 
-.cast-photo {
-  width: 80px;
-  height: 80px;
+.cast-grid, .crew-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.5rem;
+  row-gap: 2rem;
+}
+
+.cast-member, .crew-member {
+  text-align: center;
+}
+
+.cast-photo, .crew-photo {
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   overflow: hidden;
   margin: 0 auto 0.75rem;
 }
 
-.cast-image {
+.cast-image, .crew-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.cast-placeholder {
+.cast-placeholder, .crew-placeholder {
   width: 100%;
   height: 100%;
   background: var(--gothic-black);
@@ -734,13 +1006,7 @@ export default {
   justify-content: center;
 }
 
-.cast-icon {
-  width: 30px;
-  height: 30px;
-  color: var(--text-gothic-secondary);
-}
-
-.cast-name {
+.cast-name, .crew-name {
   font-weight: 600;
   color: var(--text-gothic-primary);
   margin-bottom: 0.25rem;
@@ -748,79 +1014,69 @@ export default {
 }
 
 .cast-character {
-  color: var(--text-gothic-secondary);
+  color: var(--text-gothic-accent);
   font-size: 0.8rem;
 }
 
-.crew-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.cast-number-of-episodes, .crew-number-of-episodes {
+  color: var(--text-gothic-secondary);
+  font-size: 0.7rem;
 }
 
-.crew-item {
+.crew-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
 }
 
-.crew-role {
+.crew-job-title {
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--text-gothic-accent);
-  font-size: 0.9rem;
-}
-
-.crew-name {
   color: var(--text-gothic-primary);
+  text-align: center;
+  padding-bottom: 1rem;
 }
 
-.technical-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.crew-job{
+  color: var(--text-gothic-accent);
+  font-size: 0.8rem;
 }
 
-.technical-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.tech-label {
+.show-more-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  background: transparent;
+  border: 2px solid var(--text-gothic-accent);
+  color: var(--text-gothic-accent);
+  border-radius: 25px;
   font-weight: 600;
-  color: var(--text-gothic-accent);
-  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.tech-value {
-  color: var(--text-gothic-primary);
+.show-more-btn:hover {
+  background: var(--text-gothic-accent);
+  color: white;
+  transform: translateY(-2px);
 }
 
 /* Seasons Section */
 .seasons-section {
-  margin-top: 3rem;
-}
-
-.section-title {
-  font-size: 2rem;
-  font-weight: bold;
-  color: var(--text-gothic-accent);
-  margin-bottom: 2rem;
-  text-align: center;
-}
-
-.seasons-list {
+  margin-top: 4rem;
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 2rem;
+
 }
 
 .season-card {
-  background: var(--gothic-charcoal);
   border: 2px solid var(--text-gothic-secondary);
   border-radius: 15px;
-  overflow: hidden;
-  transition: all 0.3s ease;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
 }
 
 .season-card:hover {
@@ -828,85 +1084,177 @@ export default {
 }
 
 .season-header {
-  display: grid;
-  grid-template-columns: 120px 1fr auto;
-  gap: 1.5rem;
-  padding: 1.5rem;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
   align-items: center;
 }
 
-.season-poster {
-  width: 120px;
-  height: 180px;
-  object-fit: cover;
-  border-radius: 10px;
+.season-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-gothic-accent);
+  margin-bottom: 1rem;
+  text-align: center;
 }
 
-.season-poster-placeholder {
-  width: 120px;
-  height: 180px;
-  background: var(--gothic-black);
-  border-radius: 10px;
+.season-poster {
+  width: 150px;
+  border-radius: 0.5rem;
+  transition: transform 0.2s;
+}
+
+.season-poster:hover {
+  transform: scale(1.05);
+}
+
+.season-details {
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.season-overview {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.episode-list {
+  list-style: none;
+  padding: 0;
+}
+
+.episode-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.episode-title {
+  font-weight: 500;
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s ease;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+/* Recommendations Section */
+.recommendations-section {
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+}
+
+.recommendations-scroll {
+  position: relative;
+  padding: 0 3rem;
+}
+
+.recommendations-container {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: hidden;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  padding: 1rem 0;
+  grid-auto-flow: column;
+  gap: var(--gap);
+  grid-auto-columns: calc((100% / var(--visible)) - ((var(--gap) * (var(--visible) - 1)) / var(--visible)));
+}
+
+.recommendations-container {
+  --gap: 6px;
+}
+
+@media (min-width: 1400px) {
+  .recommendations-container {
+    --visible: 6;
+  }
+}
+
+@media (min-width: 1200px) {
+  .recommendations-container {
+    --visible: 5;
+  }
+}
+
+@media (min-width: 992px) {
+  .recommendations-container {
+    --visible: 4;
+  }
+}
+
+@media (min-width: 768px) {
+  .recommendations-container {
+    --visible: 3;
+  }
+}
+
+@media (min-width: 480px) {
+  .recommendations-container {
+    --visible: 2;
+  }
+}
+
+@media (max-width: 479px) {
+  .recommendations-container {
+    --visible: 1;
+  }
+}
+
+.recommendations-container::-webkit-scrollbar {
+  display: none;
+}
+
+.recommendation-card {
+  flex-shrink: 0;
+  width: 200px;
+}
+
+.scroll-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.season-icon {
-  width: 40px;
-  height: 40px;
-  color: var(--text-gothic-secondary);
+.scroll-btn:hover {
+  background: var(--text-gothic-accent);
+  transform: translateY(-50%) scale(1.1);
 }
 
-.season-info {
-  flex: 1;
-}
-
-.season-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: var(--text-gothic-primary);
-  margin-bottom: 0.5rem;
-}
-
-.season-meta {
-  color: var(--text-gothic-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 0.75rem;
-}
-
-.season-overview {
-  color: var(--text-gothic-primary);
-  line-height: 1.5;
-  font-size: 0.95rem;
-}
-
-.expand-btn {
-  background: none;
-  border: none;
-  color: var(--text-gothic-accent);
-  cursor: pointer;
-  padding: 0.5rem;
-  transition: transform 0.3s ease;
-}
-
-.expand-btn svg {
+.scroll-btn svg {
   width: 24px;
   height: 24px;
 }
 
-.expand-btn.expanded {
-  transform: rotate(180deg);
+.scroll-left {
+  left: -10px;
 }
 
-.episodes-container {
-  border-top: 2px solid var(--text-gothic-secondary);
-  padding: 1.5rem;
-  background: rgba(0, 0, 0, 0.2);
+.scroll-right {
+  right: -10px;
 }
 
-.episodes-loading {
+.recommendations-loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -924,226 +1272,164 @@ export default {
   animation: spin 1s linear infinite;
 }
 
-.episodes-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+/* Reviews Section */
+.reviews-section {
+  margin-top: 4rem;
+  padding-bottom: 3rem;
 }
 
-.episode-item {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 1.5rem;
-  padding: 1rem;
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.review-card {
   background: var(--gothic-charcoal);
-  border-radius: 10px;
+  border: 2px solid var(--text-gothic-secondary);
+  border-radius: 15px;
+  padding: 1.5rem;
   transition: all 0.3s ease;
 }
 
-.episode-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+.review-card:hover {
+  border-color: var(--text-gothic-accent);
 }
 
-.episode-thumbnail {
-  width: 200px;
-  height: 112px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.episode-thumbnail-placeholder {
-  width: 200px;
-  height: 112px;
-  background: var(--gothic-black);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.episode-thumbnail-placeholder svg {
-  width: 40px;
-  height: 40px;
-  color: var(--text-gothic-secondary);
-}
-
-.episode-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.episode-header {
+.review-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 1rem;
   gap: 1rem;
 }
 
-.episode-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-gothic-primary);
+.review-author {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   flex: 1;
 }
 
-.episode-runtime {
+.author-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--gothic-black);
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--text-gothic-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.author-name {
+  font-weight: 600;
+  color: var(--text-gothic-primary);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.review-date {
   color: var(--text-gothic-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.review-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(212, 175, 55, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.rating-value {
+  font-weight: 600;
+  color: var(--text-gothic-primary);
   font-size: 0.9rem;
   white-space: nowrap;
 }
 
-.episode-date {
-  color: var(--text-gothic-secondary);
-  font-size: 0.85rem;
+.review-content {
+  position: relative;
 }
 
-.episode-overview {
+.review-text {
   color: var(--text-gothic-primary);
-  line-height: 1.5;
-  font-size: 0.95rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  margin: 0;
+  max-height: 250px;
+  overflow: auto;
+  position: relative;
 }
 
-.episode-rating {
+.review-text.expanded {
+  max-height: none;
+  overflow: visible;
+}
+
+.review-text:not(.expanded)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent, var(--gothic-charcoal));
+  pointer-events: none;
+}
+
+.read-more-btn {
+  margin-top: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text-gothic-accent);
+  font-weight: 600;
+  padding: 0;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.read-more-btn:hover {
+  color: #667eea;
+  text-decoration: underline;
+}
+
+.reviews-loading {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
   color: var(--text-gothic-secondary);
-  font-size: 0.9rem;
-}
-
-.star-small {
-  width: 12px;
-  height: 12px;
-  color: #ffd700;
-}
-
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .tvshow-header {
-    grid-template-columns: 250px 1fr;
-    gap: 2rem;
-  }
-
-  .poster-container {
-    width: 250px;
-    height: 375px;
-  }
-
-  .tvshow-title {
-    font-size: 2.5rem;
-  }
-
-  .details-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .season-header {
-    grid-template-columns: 100px 1fr auto;
-    gap: 1rem;
-  }
-
-  .season-poster, .season-poster-placeholder {
-    width: 100px;
-    height: 150px;
-  }
-
-  .episode-item {
-    grid-template-columns: 150px 1fr;
-    gap: 1rem;
-  }
-
-  .episode-thumbnail, .episode-thumbnail-placeholder {
-    width: 150px;
-    height: 84px;
-  }
-}
-
-@media (max-width: 768px) {
-  .content-container {
-    padding: 0 1rem;
-    margin-top: -150px;
-  }
-
-  .tvshow-header {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .poster-section {
-    order: -1;
-  }
-
-  .poster-container {
-    width: 200px;
-    height: 300px;
-  }
-
-  .tvshow-title {
-    font-size: 2rem;
-  }
-
-  .tvshow-meta {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .cast-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  }
-
-  .season-header {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
-  .season-poster, .season-poster-placeholder {
-    margin: 0 auto;
-  }
-
-  .expand-btn {
-    margin: 0 auto;
-  }
-
-  .episode-item {
-    grid-template-columns: 1fr;
-  }
-
-  .episode-thumbnail, .episode-thumbnail-placeholder {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16/9;
-  }
-}
-
-@media (max-width: 480px) {
-  .backdrop-section {
-    height: 250px;
-  }
-
-  .content-container {
-    margin-top: -100px;
-  }
-
-  .tvshow-title {
-    font-size: 1.8rem;
-  }
-
-  .poster-container {
-    width: 180px;
-    height: 270px;
-  }
-
-  .detail-card {
-    padding: 1rem;
-  }
-
-  .cast-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .episode-item {
-    padding: 0.75rem;
-  }
 }
 </style>
