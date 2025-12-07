@@ -48,11 +48,16 @@
 
           <!-- Title and Basic Info -->
           <div class="title-section">
-            <h1 class="show-title">{{ show.name }}</h1>
+            <div class="title-and-creator">
+              <h1 class="show-title">{{ show.name }}</h1>
+              <span v-for="creator in getCreators" :key="creator.id" class="creator-name">
+                Created by: {{ creator.name }}
+              </span>
+            </div>
             <div class="show-meta">
               <span v-if="show.first_air_date" class="meta-item">
                 {{ new Date(show.first_air_date).getFullYear() }}{{ show.last_air_date && !show.in_production ? ' - ' +
-                  new Date(show.last_air_date).getFullYear() : '' }}
+                new Date(show.last_air_date).getFullYear() : '' }}
               </span>
               <span v-if="show.number_of_seasons" class="meta-item">
                 {{ show.number_of_seasons }} {{ show.number_of_seasons === 1 ? 'Season' : 'Seasons' }}
@@ -64,7 +69,7 @@
               <!-- User Score Donut -->
               <div v-if="show.vote_average > 0" class="donut-container">
                 <span class="user-score">User score</span>
-                <vc-donut :background="'#6a4c7c'" :sections="sections" :size="100" :unit="px" :thickness="40"
+                <vc-donut :background="'#1a1a1a'" :sections="sections" :size="100" :unit="px" :thickness="40"
                   :animation="true" :auto-adjust-text-size :suppress-validation-warnings="false">
                   <h1> {{ show.vote_average.toFixed(1) }}</h1>
                 </vc-donut>
@@ -137,69 +142,34 @@
                 </div>
               </div>
             </div>
-            <button v-if="cast.length > 8" @click="toggleCastExpanded" class="show-more-btn">
+            <button v-if="cast.length > 10" @click="toggleCastExpanded" class="show-more-btn">
               {{ showAllCast ? 'Show Less' : `Show All ${cast.length} Cast Members` }}
             </button>
           </div>
 
           <!-- Crew Section -->
           <div class="detail-card crew-card">
-
             <h3 class="card-title">Key Crew</h3>
-
-            <!-- Priority jobs in the correct order -->
-            <div v-for="job in jobPriority" :key="job">
-
-              <div v-if="groupedCrew[job] && groupedCrew[job].length > 0" class="crew-block">
-
-                <h4 class="crew-job-title">{{ job }}</h4>
-
-                <div class="crew-grid">
-                  <div v-for="member in groupedCrew[job]" :key="`${member.id}-${job}`" class="crew-member">
-                    <div class="crew-photo">
-                      <img v-if="member.profile_path" :src="`https://image.tmdb.org/t/p/w185${member.profile_path}`"
-                        :alt="member.name" class="crew-image" />
-                      <div v-else class="crew-placeholder">
-                        <font-awesome-icon icon="user" style="width: 75px; height: 75px;" />
-                      </div>
-                    </div>
-
-                    <div class="crew-info">
-                      <p class="crew-name">{{ member.name }}</p>
-                      <p class="crew-number-of-episodes" v-if="member.total_episode_count">{{ member.total_episode_count }} episodes</p>
-                    </div>
+            <div class="crew-grid">
+              <div v-for="member in displayedCrew" :key="`${member.id}-${job}`" class="crew-member">
+                <div class="crew-photo">
+                  <img v-if="member.profile_path" :src="`https://image.tmdb.org/t/p/w185${member.profile_path}`"
+                    :alt="member.name" class="crew-image" />
+                  <div v-else class="crew-placeholder">
+                    <font-awesome-icon icon="user" style="width: 75px; height: 75px;" />
                   </div>
                 </div>
 
-              </div>
-
-            </div>
-
-            <!-- Other crew section -->
-            <div class="crew-block other-crew">
-
-              <button class="show-more-btn" @click="showOtherCrew = !showOtherCrew">
-                {{ showOtherCrew ? 'Show Less' : `Show ${otherCrew.length} Other Crew` }}
-              </button>
-
-              <div v-if="showOtherCrew" class="crew-grid">
-                <div v-for="member in otherCrew" :key="`${member.id}-other`" class="crew-member">
-                  <div class="crew-photo">
-                    <img v-if="member.profile_path" :src="`https://image.tmdb.org/t/p/w185${member.profile_path}`"
-                      :alt="member.name" class="crew-image" />
-                    <div v-else class="crew-placeholder">
-                      <font-awesome-icon icon="user" style="width: 75px; height: 75px;" />
-                    </div>
-                  </div>
-
-                  <div class="crew-info">
-                    <p class="crew-name">{{ member.name }}</p>
-                    <p class="crew-job">{{ member.job }}</p>
-                    <p class= "crew-number-of-episodes" v-if="member.episodeCount">{{ member.episodeCount }} episodes</p>
-                  </div>
+                <div class="crew-info">
+                  <p class="crew-name">{{ member.name }}</p>
+                  <p class="crew-job-title">{{ member.jobs[0].job }}</p>
+                  <p class="crew-number-of-episodes" v-if="member.total_episode_count">{{ member.total_episode_count }} episodes</p>
                 </div>
               </div>
             </div>
+            <button v-if="crew.length > 10" @click="toggleCrewExpanded" class="show-more-btn">
+              {{ showAllCrew ? 'Show Less' : `Show All ${crew.length} Crew Members` }}
+            </button>
           </div>
         </div>
 
@@ -328,23 +298,14 @@ export default {
       pageSize: 7,
       showAllCast: false,
       showAllCrew: false,
-      groupedCrew: {},
-      otherCrew: [],
       showOtherCrew: false,
-      show: null,
       expandedSeasons: [],
       loadingSeasons: [],
       seasonEpisodes: {},
       reviews: [],
       loadingReviews: false,
       showAllReviews: false,
-      expandedReviews: [],
-      jobPriority: [
-        "Creator",
-        "Executive Producer",
-        "Producer",
-        "Writer",
-      ],
+      expandedReviews: []
     }
   },
   computed: {
@@ -365,10 +326,21 @@ export default {
       if (!this.show || !this.show.credits) return [];
       return this.show.credits.cast || [];
     },
+    crew() {
+      if (!this.show || !this.show.credits) return [];
+      return this.show.credits.crew || [];
+    },
+    getCreators() {
+      if (!this.show || !this.show.created_by) return [];
+      return this.show.created_by;
+    },
     displayedCast() {
       return this.showAllCast ? this.cast : this.cast.slice(0, 10);
     },
-
+    displayedCrew() {
+       if (!this.show.credits.crew) return []
+       return this.showAllCrew ? [...this.show.credits.crew].sort((a, b) => (b.total_episode_count || 0) - (a.total_episode_count || 0)) : [...this.show.credits.crew].sort((a, b) => (b.total_episode_count || 0) - (a.total_episode_count || 0)).slice(0, 10)
+    },
     displayedSeasons() {
       return this.showAllSeasons ? this.show.seasons : this.show.seasons;
     },
@@ -419,7 +391,6 @@ export default {
       try {
         const showData = await tmdbService.getCompleteTVShowDetails(this.id);
         this.show = showData;
-        this.processCrew();
         console.log(this.show);
         const season1 = this.show.seasons?.find(s => s.season_number === 1)
         if (season1) {
@@ -599,46 +570,6 @@ export default {
     },
     getImageUrl(path) {
       return path ? `https://image.tmdb.org/t/p/w300${path}` : '/placeholder.jpg'
-    },
-    processCrew() {
-      const priority = this.jobPriority;
-      const grouped = {};
-      const others = [];
-
-      this.show.credits.crew.forEach(member => {
-        const jobs = Array.isArray(member.jobs) ? member.jobs : [];
-
-        if (!jobs.length) return;
-        const matchingJobs = jobs.filter(j => priority.includes(j.job));
-        if (matchingJobs.length > 0) {
-          matchingJobs.forEach(jobObj => {
-            const jobName = jobObj.job;
-
-            if (!grouped[jobName]) {
-              grouped[jobName] = [];
-            }
-
-            grouped[jobName].push({
-              ...member,
-              job: jobName,
-              episodeCount: jobObj.episode_count || 0
-            });
-          });
-        }
-
-        else {
-          // No priority job matched, add to others
-          const j = jobs[0];
-          others.push({
-            ...member,
-            job: j.job,
-            episodeCount: j.episode_count || 0
-          });
-        }
-      });
-
-      this.groupedCrew = grouped;
-      this.otherCrew = others;
     },
   }
 }
@@ -862,11 +793,26 @@ export default {
   max-width: 1000px;
 }
 
+.title-and-creator {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
 .show-title {
   font-size: 3rem;
   font-weight: bold;
   margin-bottom: 1rem;
   color: var(--text-gothic-primary);
+}
+
+.creator-name {
+  font-size: 1rem;
+  color: var(--text-gothic-secondary);
+  margin-left: 1rem;
 }
 
 .show-meta {
@@ -933,7 +879,7 @@ export default {
 }
 
 .genre-tag {
-  background: var(--gothic-amethyst);
+  background: var(--gothic-stone);
   color: var(--text-gothic-primary);
   padding: 0.5rem 1rem;
   border-radius: 20px;
@@ -972,18 +918,21 @@ export default {
   text-align: center;
 }
 
-.cast-grid, .crew-grid {
+.cast-grid,
+.crew-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 1.5rem;
   row-gap: 2rem;
 }
 
-.cast-member, .crew-member {
+.cast-member,
+.crew-member {
   text-align: center;
 }
 
-.cast-photo, .crew-photo {
+.cast-photo,
+.crew-photo {
   width: 100px;
   height: 100px;
   border-radius: 50%;
@@ -991,13 +940,15 @@ export default {
   margin: 0 auto 0.75rem;
 }
 
-.cast-image, .crew-image {
+.cast-image,
+.crew-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.cast-placeholder, .crew-placeholder {
+.cast-placeholder,
+.crew-placeholder {
   width: 100%;
   height: 100%;
   background: var(--gothic-black);
@@ -1006,38 +957,27 @@ export default {
   justify-content: center;
 }
 
-.cast-name, .crew-name {
+.cast-name,
+.crew-name {
   font-weight: 600;
   color: var(--text-gothic-primary);
   margin-bottom: 0.25rem;
   font-size: 0.9rem;
 }
 
-.cast-character {
+.cast-character,
+.crew-job-title {
   color: var(--text-gothic-accent);
   font-size: 0.8rem;
 }
 
-.cast-number-of-episodes, .crew-number-of-episodes {
+.cast-number-of-episodes,
+.crew-number-of-episodes {
   color: var(--text-gothic-secondary);
   font-size: 0.7rem;
 }
 
-.crew-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.crew-job-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-gothic-primary);
-  text-align: center;
-  padding-bottom: 1rem;
-}
-
-.crew-job{
+.crew-job {
   color: var(--text-gothic-accent);
   font-size: 0.8rem;
 }
